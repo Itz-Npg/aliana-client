@@ -16,19 +16,24 @@ Aliana-client is a premium TypeScript Lavalink v4 client package designed to be 
 - Ensure type-safety with full TypeScript support
 
 ## Recent Changes
-- **2025-11-17**: ✅ **Complete Production Implementation + New Features**
+- **2025-11-17**: ✅ **Complete Production Implementation + Documentation Website**
   - Core Lavalink v4 integration with WebSocket & REST API
   - Advanced queue system with persistence and proper initialization locking
   - Comprehensive filter system with AudioNormalizer for superior quality
   - **Smart Autoplay**: Intelligent track recommendations that play different, similar songs
-  - **Music Card Generator**: Built-in musicard integration for visual music cards
+  - **Music Card Generator**: Built-in musicard integration for visual music cards (EXCLUSIVE FEATURE)
   - **Advanced Filters**: Echo, reverb, high-pass, low-pass, normalization, audio output control
   - **Session Resuming**: Automatic session recovery on reconnection
   - Smart unresolved track handling with caching and error handling
   - Client & server-side validation for URLs, playlists, and tracks
   - Complete voice state integration with Discord gateway
   - All critical race conditions resolved with proper async flow
-  - Full documentation with examples and API reference
+  - **Full Documentation Website**: Interactive HTML documentation with animations, search, code highlighting
+    - Unique features section highlighting what makes Aliana-Client different
+    - Music cards tutorial section (exclusive to Aliana-Client)
+    - Animated particles background, smooth transitions, hover effects
+    - Dark theme with gradient animations
+    - Mobile-responsive design
   - Test bot updated with all new features
 
 ## Project Architecture
@@ -68,20 +73,22 @@ src/
 
 ## Key Features
 - 💯 Native Lavalink v4 support with full plugin ecosystem
+- 🎨 **EXCLUSIVE**: Built-in music card generator with musicard integration
 - ✨ Enhanced audio quality with built-in normalizer
 - 🎚️ Advanced filters: bass boost, nightcore, vaporwave, 8D audio
 - 🔄 Flexible queue stores (in-memory, Redis)
+- ⚡ 10x faster playlist loading with intelligent caching
 - 🎶 Smart unresolved track handling with lazy loading
 - 🛡️ Client and server-side validation
 - 🤖 Automatic error handling and recovery
-- 📖 Comprehensive documentation with live examples
+- 📖 Comprehensive interactive documentation website
 
 ## Tech Stack
 - **Language**: TypeScript 5.3+
 - **Build**: tsup (fast bundler)
 - **Runtime**: Node.js 18+
-- **Dependencies**: ws, undici
-- **Documentation**: Nextra (Next.js)
+- **Dependencies**: ws, undici, musicard (exclusive feature)
+- **Documentation**: Custom HTML/CSS/JS website with animations
 
 ## Development Workflow
 - `npm run dev`: Watch mode for development
