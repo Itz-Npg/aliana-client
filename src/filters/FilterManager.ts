@@ -185,8 +185,11 @@ export class FilterManager {
 
   async setEcho(delay?: number, decay?: number): Promise<void> {
     if (!delay && !decay) {
-      if (this.filters.pluginFilters) {
-        delete this.filters.pluginFilters['lavalink-filter-plugin'];
+      if (this.filters.pluginFilters?.['lavalink-filter-plugin']) {
+        delete this.filters.pluginFilters['lavalink-filter-plugin'].echo;
+        if (Object.keys(this.filters.pluginFilters['lavalink-filter-plugin']).length === 0) {
+          delete this.filters.pluginFilters['lavalink-filter-plugin'];
+        }
         if (Object.keys(this.filters.pluginFilters).length === 0) {
           delete this.filters.pluginFilters;
         }
@@ -272,8 +275,8 @@ export class FilterManager {
     await this.updateCallback(this.filters);
   }
 
-  async setNormalization(maxAmplitude?: number, adaptive?: boolean): Promise<void> {
-    if (!maxAmplitude && adaptive === undefined) {
+  async setNormalization(maxAmplitude?: number): Promise<void> {
+    if (!maxAmplitude) {
       if (this.filters.pluginFilters) {
         delete this.filters.pluginFilters['normalization'];
         if (Object.keys(this.filters.pluginFilters).length === 0) {
@@ -285,8 +288,7 @@ export class FilterManager {
         this.filters.pluginFilters = {};
       }
       this.filters.pluginFilters['normalization'] = {
-        maxAmplitude: maxAmplitude ?? 0.75,
-        adaptive: adaptive ?? true
+        maxAmplitude: maxAmplitude ?? 0.75
       };
     }
     await this.updateCallback(this.filters);

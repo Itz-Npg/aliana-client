@@ -288,10 +288,7 @@ Create a copy of the track.
 
 Utility for generating visual music cards using the musicard package.
 
-**Note**: This feature requires the optional `musicard` package to be installed:
-```bash
-npm install musicard
-```
+**Note**: The `musicard` package is included with aliana-client, so no additional installation is required!
 
 ### Static Methods
 

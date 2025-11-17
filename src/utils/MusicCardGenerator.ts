@@ -22,7 +22,7 @@ export class MusicCardGenerator {
   private static musicard: any = null;
 
   private static async loadMusicard(): Promise<void> {
-    if (this.musicardLoaded && this.musicard) {
+    if (this.musicardLoaded) {
       return;
     }
 
@@ -30,10 +30,8 @@ export class MusicCardGenerator {
       this.musicard = await import('musicard');
       this.musicardLoaded = true;
     } catch (error) {
-      throw new Error(
-        'musicard package is not installed. Install it with: npm install musicard\n' +
-        'Note: musicard is an optional dependency for generating music cards.'
-      );
+      this.musicardLoaded = true;
+      this.musicard = null;
     }
   }
 
@@ -43,6 +41,13 @@ export class MusicCardGenerator {
     theme: MusicCardTheme = 'classic'
   ): Promise<Buffer> {
     await this.loadMusicard();
+    
+    if (!this.musicard) {
+      throw new Error(
+        'musicard package is not available. Install it with: npm install musicard\n' +
+        'Note: musiccard is bundled with aliana-client but may not be installed in your environment.'
+      );
+    }
 
     const defaultOptions: MusicCardOptions = {
       thumbnailImage: track.info.artworkUrl || track.thumbnail || 'https://via.placeholder.com/300',
@@ -84,6 +89,15 @@ export class MusicCardGenerator {
     options: MusicCardOptions = {},
     theme: MusicCardTheme = 'classic'
   ): Promise<Buffer> {
+    await this.loadMusicard();
+    
+    if (!this.musicard) {
+      throw new Error(
+        'musicard package is not available. Install it with: npm install musicard\n' +
+        'Note: musiccard is bundled with aliana-client but may not be installed in your environment.'
+      );
+    }
+    
     const duration = track.info.length || track.duration || 0;
     const progress = duration > 0 ? Math.min(100, (currentPosition / duration) * 100) : 0;
 
