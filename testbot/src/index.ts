@@ -30,8 +30,10 @@ client.on('ready', () => {
 
 client.on('raw', (packet: any) => {
   if (packet.t === 'VOICE_STATE_UPDATE') {
+    console.log('📡 Received VOICE_STATE_UPDATE:', packet.d.guild_id);
     manager.updateVoiceState(packet.d);
   } else if (packet.t === 'VOICE_SERVER_UPDATE') {
+    console.log('📡 Received VOICE_SERVER_UPDATE:', packet.d.guild_id);
     manager.updateVoiceServer(packet.d);
   }
 });
@@ -54,7 +56,16 @@ manager.on('nodeError', (node: Node, error: Error) => {
   console.error(`❌ Node "${node.options.identifier}" error:`, error.message);
 });
 
+manager.on('trackError', (player: Player, track: Track, error: any) => {
+  console.error(`❌ Track error: ${track.info.title}`, error);
+  const channel = client.channels.cache.get(player.textChannelId!);
+  if (channel && 'send' in channel) {
+    (channel as TextChannel).send(`❌ Error playing: **${track.info.title}** - ${error.message || 'Unknown error'}`);
+  }
+});
+
 manager.on('trackStart', (player: Player, track: Track) => {
+  console.log(`🎵 Track started: ${track.info.title}`);
   const channel = client.channels.cache.get(player.textChannelId!);
   if (channel && 'send' in channel) {
     (channel as TextChannel).send(`🎵 Now playing: **${track.info.title}** by **${track.info.author}**`);
