@@ -28,8 +28,12 @@ client.on('ready', () => {
   console.log(`💡 Try: ${config.prefix}play <song name>`);
 });
 
-client.on('raw', (d: any) => {
-  manager.updateVoiceState(d);
+client.on('raw', (packet: any) => {
+  if (packet.t === 'VOICE_STATE_UPDATE') {
+    manager.updateVoiceState(packet.d);
+  } else if (packet.t === 'VOICE_SERVER_UPDATE') {
+    manager.updateVoiceServer(packet.d);
+  }
 });
 
 client.on('voiceStateUpdate', (oldState: VoiceState, newState: VoiceState) => {
@@ -180,8 +184,18 @@ async function handlePlay(message: Message, args: string[]) {
     message.reply(`✅ Added **${tracks[0].info.title}** to queue!`);
   }
 
+  console.log(`Player state - playing: ${player.playing}, paused: ${player.paused}, connected: ${player.connected}`);
+  console.log(`Queue state - current: ${player.queue.current?.info.title || 'none'}, size: ${player.queue.size}`);
+  
   if (!player.playing && !player.paused) {
-    await player.play();
+    console.log('Attempting to start playback...');
+    try {
+      await player.play();
+      console.log('Play command sent successfully');
+    } catch (error: any) {
+      console.error('Error during play:', error.message);
+      message.reply(`❌ Playback error: ${error.message}`);
+    }
   }
 }
 
