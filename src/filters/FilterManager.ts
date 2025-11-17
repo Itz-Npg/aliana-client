@@ -71,7 +71,11 @@ export class FilterManager {
   }
 
   async setPreset(preset: PresetName): Promise<void> {
-    const presetFilters = FILTER_PRESETS[preset]();
+    const presetFunction = FILTER_PRESETS[preset];
+    if (typeof presetFunction !== 'function') {
+      throw new Error(`Invalid preset: ${preset}. Available presets: ${Object.keys(FILTER_PRESETS).join(', ')}`);
+    }
+    const presetFilters = presetFunction();
     this.filters = { ...this.filters, ...presetFilters };
     await this.updateCallback(this.filters);
   }

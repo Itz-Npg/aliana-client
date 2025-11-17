@@ -30,6 +30,8 @@ export class Player extends EventEmitter {
   private _connected: boolean = false;
   private _position: number = 0;
   private _ping: number = 0;
+  private _autoPlay: boolean = false;
+  private _lastPlayedTrack: Track | null = null;
   private voiceState: Partial<VoiceState> = {};
   private sendPayload: (guildId: string, payload: any) => void;
   private selfDeaf: boolean;
@@ -87,6 +89,22 @@ export class Player extends EventEmitter {
 
   get ping(): number {
     return this._ping;
+  }
+
+  get autoPlay(): boolean {
+    return this._autoPlay;
+  }
+
+  setAutoPlay(enabled: boolean): void {
+    this._autoPlay = enabled;
+  }
+
+  get lastPlayedTrack(): Track | null {
+    return this._lastPlayedTrack;
+  }
+
+  setLastPlayedTrack(track: Track | null): void {
+    this._lastPlayedTrack = track;
   }
 
   async connect(options: ConnectOptions = {}): Promise<void> {

@@ -80,20 +80,32 @@ manager.on('trackEnd', (player: Player, track: Track) => {
   console.log(`✅ Track ended: ${track.info.title}`);
 });
 
+manager.on('autoPlayTrack', (player: Player, track: Track) => {
+  console.log(`🎵 AutoPlay: ${track.info.title}`);
+  const channel = client.channels.cache.get(player.textChannelId!);
+  if (channel && 'send' in channel) {
+    (channel as TextChannel).send(`🎵 **AutoPlay**: Now playing **${track.info.title}** by **${track.info.author}**`);
+  }
+});
+
 manager.on('queueEnd', (player: Player) => {
   const channel = client.channels.cache.get(player.textChannelId!);
   if (channel && 'send' in channel) {
-    (channel as TextChannel).send('📭 Queue finished! Add more songs or I\'ll leave in 5 minutes.');
+    if (!player.autoPlay) {
+      (channel as TextChannel).send('📭 Queue finished! Add more songs or I\'ll leave in 5 minutes. (Use !autoplay to enable continuous playback)');
+    }
   }
   
-  setTimeout(() => {
-    if (player.queue.tracks.length === 0 && !player.playing) {
-      player.destroy(DestroyReasons.QueueEmpty);
-      if (channel && 'send' in channel) {
-        (channel as TextChannel).send('👋 Left due to inactivity.');
+  if (!player.autoPlay) {
+    setTimeout(() => {
+      if (player.queue.tracks.length === 0 && !player.playing) {
+        player.destroy(DestroyReasons.QueueEmpty);
+        if (channel && 'send' in channel) {
+          (channel as TextChannel).send('👋 Left due to inactivity.');
+        }
       }
-    }
-  }, 5 * 60 * 1000);
+    }, 5 * 60 * 1000);
+  }
 });
 
 manager.on('playerDestroy', (player: Player, reason: string) => {
@@ -137,6 +149,9 @@ client.on('messageCreate', async (message: Message) => {
         break;
       case 'filter':
         await handleFilter(message, args);
+        break;
+      case 'autoplay':
+        await handleAutoPlay(message);
         break;
       case 'help':
         await handleHelp(message);
@@ -350,13 +365,36 @@ async function handleFilter(message: Message, args: string[]) {
     return message.reply('🔄 Filters cleared!');
   }
 
-  const validFilters = ['bassboost', 'nightcore', 'vaporwave', '8d'];
-  if (!validFilters.includes(filterName)) {
+  const filterMap: Record<string, string> = {
+    'bassboost': 'bassBoost',
+    'nightcore': 'nightcore',
+    'vaporwave': 'vaporwave',
+    '8d': 'eightD',
+  };
+
+  if (!filterMap[filterName]) {
     return message.reply('❌ Invalid filter! Use: bassboost, nightcore, vaporwave, 8d, or clear');
   }
 
-  player.filters.setPreset(filterName as any);
+  player.filters.setPreset(filterMap[filterName] as any);
   message.reply(`🎛️ Applied **${filterName}** filter!`);
+}
+
+async function handleAutoPlay(message: Message) {
+  const player = manager.players.get(message.guild!.id);
+  if (!player) return message.reply('❌ Nothing is playing! Use !play first.');
+
+  if (!message.member?.voice.channel) {
+    return message.reply('❌ You need to be in the voice channel!');
+  }
+
+  player.setAutoPlay(!player.autoPlay);
+  
+  if (player.autoPlay) {
+    message.reply('✅ **AutoPlay enabled!** 🎵\nI will automatically play related YouTube tracks when the queue ends, just like Spotify!');
+  } else {
+    message.reply('❌ **AutoPlay disabled.**\nMusic will stop when the queue ends.');
+  }
 }
 
 async function handleHelp(message: Message) {
@@ -370,6 +408,7 @@ async function handleHelp(message: Message) {
 \`${config.prefix}skip\` - Skip current track
 \`${config.prefix}stop\` - Stop and clear queue
 \`${config.prefix}volume <0-100>\` - Set volume
+\`${config.prefix}autoplay\` - Toggle autoplay (Spotify-like)
 
 **Queue:**
 \`${config.prefix}queue\` - Show current queue

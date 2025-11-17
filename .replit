@@ -38,4 +38,4 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd testbot && npm run dev"
+args = "cd testbot && node dist/index.js"

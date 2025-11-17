@@ -90,6 +90,9 @@ export class LavalinkManager extends EventEmitter {
     switch (payload.type) {
       case 'TrackStartEvent':
         const startTrack = new Track(payload.track);
+        if (player.queue.current) {
+          player.setLastPlayedTrack(player.queue.current);
+        }
         this.emit('trackStart', player, startTrack);
         player.setPlaying(true);
         break;
@@ -100,20 +103,20 @@ export class LavalinkManager extends EventEmitter {
         player.setPlaying(false);
 
         if (payload.reason === 'finished' || payload.reason === 'loadFailed') {
-          this.handleTrackEnd(player);
+          this.handleTrackEnd(player, endTrack);
         }
         break;
 
       case 'TrackExceptionEvent':
         const exceptionTrack = new Track(payload.track);
         this.emit('trackError', player, exceptionTrack, payload.exception);
-        this.handleTrackEnd(player);
+        this.handleTrackEnd(player, exceptionTrack);
         break;
 
       case 'TrackStuckEvent':
         const stuckTrack = new Track(payload.track);
         this.emit('trackStuck', player, stuckTrack, payload.thresholdMs);
-        this.handleTrackEnd(player);
+        this.handleTrackEnd(player, stuckTrack);
         break;
 
       case 'WebSocketClosedEvent':
@@ -122,13 +125,49 @@ export class LavalinkManager extends EventEmitter {
     }
   }
 
-  private async handleTrackEnd(player: Player): Promise<void> {
+  private async handleTrackEnd(player: Player, finishedTrack: Track): Promise<void> {
     await player.queue.initialize();
+    
+    const trackForAutoplay = player.lastPlayedTrack || player.queue.current || finishedTrack;
     
     if (player.queue.size > 0) {
       await player.skip();
+    } else if (player.autoPlay && trackForAutoplay) {
+      try {
+        const relatedTracks = await this.getRelatedTracks(trackForAutoplay);
+        if (relatedTracks.length > 0) {
+          const randomTrack = relatedTracks[Math.floor(Math.random() * Math.min(5, relatedTracks.length))];
+          await player.queue.add(randomTrack);
+          await player.skip();
+          this.emit('autoPlayTrack', player, randomTrack);
+        } else {
+          this.emit('queueEnd', player);
+        }
+      } catch (error) {
+        console.error('AutoPlay failed:', error);
+        this.emit('queueEnd', player);
+      }
     } else {
       this.emit('queueEnd', player);
+    }
+  }
+
+  private async getRelatedTracks(track: Track): Promise<Track[]> {
+    try {
+      const searchQuery = `${track.info.title} ${track.info.author}`;
+      const result = await this.search(searchQuery, track.requester, 'youtube');
+      
+      if (result.loadType === 'search' && Array.isArray(result.data)) {
+        const tracks = result.data as any as Track[];
+        return tracks.filter((t) => 
+          t.info.identifier !== track.info.identifier
+        ).slice(0, 10);
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Failed to get related tracks:', error);
+      return [];
     }
   }
 
@@ -283,6 +322,10 @@ export class LavalinkManager extends EventEmitter {
     const player = this.players.get(data.guild_id);
     if (!player) return;
 
+    if (data.user_id && data.user_id !== this._clientId) {
+      return;
+    }
+
     if (data.channel_id === null) {
       this.emit('playerDisconnect', player, player.voiceChannelId);
       return;
@@ -293,7 +336,9 @@ export class LavalinkManager extends EventEmitter {
       player.voiceChannelId = data.channel_id;
     }
 
-    player.setVoiceState({ sessionId: data.session_id });
+    if (data.session_id) {
+      player.setVoiceState({ sessionId: data.session_id });
+    }
   }
 
   updateVoiceServer(data: any): void {
