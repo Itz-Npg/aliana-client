@@ -1,0 +1,13 @@
+{
+  "prefix": "!",
+  "lavalink": {
+    "nodes": [
+      {
+        "id": "main",
+        "host": "localhost",
+        "port": 2333,
+        "password": "youshallnotpass"
+      }
+    ]
+  }
+}
