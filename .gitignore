@@ -24,3 +24,14 @@ coverage/
 temp/
 build/
 out/
+
+# Testbot
+testbot/dist/
+testbot/node_modules/
+testbot/*.log
+testbot/config.json
+
+# Replit specific
+.replit
+replit.nix
+.config/

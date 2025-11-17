@@ -99,7 +99,12 @@ if (result.tracks.length) {
 
 ## 📖 Documentation
 
-Full documentation with interactive examples coming soon!
+- **[Quick Start Guide](./QUICK_START.md)** - Get started in 5 minutes
+- **[GitHub Setup Guide](./GITHUB_SETUP_GUIDE.md)** - Deploy to GitHub with CI/CD
+- **[API Reference](./API_REFERENCE.md)** - Complete API documentation
+- **[Examples](./EXAMPLES.md)** - Code examples and use cases
+- **[Testing Guide](./TESTING_GUIDE.md)** - How to test your bot
+- **[Live Documentation](https://YOUR_USERNAME.github.io/aliana-client/)** - Interactive web docs
 
 ---
 
