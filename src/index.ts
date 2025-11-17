@@ -7,6 +7,7 @@ export { FilterManager } from './filters/FilterManager';
 export { FILTER_PRESETS, type PresetName } from './filters/presets';
 export { Validator } from './utils/Validator';
 export { AudioNormalizer } from './utils/AudioNormalizer';
+export { MusicCardGenerator, type MusicCardOptions, type MusicCardTheme } from './utils/MusicCardGenerator';
 export { MemoryStore } from './stores/MemoryStore';
 export { RedisStoreAdapter, type RedisClient } from './stores/RedisStoreAdapter';
 export { DestroyReasons } from './types/lavalink';

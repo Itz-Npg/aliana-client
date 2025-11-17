@@ -218,6 +218,34 @@ Set channel mix filter.
 #### `setLowPass(smoothing?): Promise<void>`
 Set low-pass filter.
 
+#### `setAudioOutput(type: 'mono' | 'stereo' | 'left' | 'right'): Promise<void>`
+Set audio output channel configuration.
+
+#### `setEcho(delay?, decay?): Promise<void>`
+Set echo effect (requires lavalink-filter-plugin).
+- `delay`: Echo delay in seconds (default: 1)
+- `decay`: Echo decay factor 0-1 (default: 0.5)
+
+#### `setReverb(delays?, gains?): Promise<void>`
+Set reverb effect (requires lavalink-filter-plugin).
+- `delays`: Array of delay values (default: [0.037, 0.042, 0.048, 0.053])
+- `gains`: Array of gain values (default: [0.84, 0.83, 0.82, 0.81])
+
+#### `setHighPass(cutoffFrequency?, boostFactor?): Promise<void>`
+Set high-pass filter (requires lavadspx-plugin).
+- `cutoffFrequency`: Frequency cutoff in Hz (default: 1475)
+- `boostFactor`: Volume boost factor (default: 1.0)
+
+#### `setPluginLowPass(cutoffFrequency?, boostFactor?): Promise<void>`
+Set plugin low-pass filter (requires lavadspx-plugin).
+- `cutoffFrequency`: Frequency cutoff in Hz (default: 284)
+- `boostFactor`: Volume boost factor (default: 1.0)
+
+#### `setNormalization(maxAmplitude?, adaptive?): Promise<void>`
+Set audio normalization (requires lavadspx-plugin).
+- `maxAmplitude`: Maximum amplitude 0-1 (default: 0.75)
+- `adaptive`: Enable adaptive normalization (default: true)
+
 #### `clearFilters(): Promise<void>`
 Remove all filters.
 
@@ -253,6 +281,91 @@ Convert to JSON.
 
 #### `clone(): Track`
 Create a copy of the track.
+
+---
+
+## MusicCardGenerator
+
+Utility for generating visual music cards using the musicard package.
+
+**Note**: This feature requires the optional `musicard` package to be installed:
+```bash
+npm install musicard
+```
+
+### Static Methods
+
+#### `generateCard(track: Track, options?: MusicCardOptions, theme?: MusicCardTheme): Promise<Buffer>`
+Generate a music card for a track.
+
+**Parameters:**
+- `track`: The track to generate a card for
+- `options`: Optional customization options (see MusicCardOptions below)
+- `theme`: Theme to use ('classic', 'classicPro', or 'dynamic')
+
+**Returns:** PNG image buffer
+
+#### `generateCardWithProgress(track: Track, currentPosition: number, options?: MusicCardOptions, theme?: MusicCardTheme): Promise<Buffer>`
+Generate a music card with current playback progress.
+
+**Parameters:**
+- `track`: The track to generate a card for
+- `currentPosition`: Current playback position in ms
+- `options`: Optional customization options
+- `theme`: Theme to use
+
+**Returns:** PNG image buffer
+
+#### `isAvailable(): boolean`
+Check if musicard package is installed and available.
+
+### MusicCardOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| thumbnailImage | string | Album artwork URL |
+| backgroundColor | string | Card background color (hex) |
+| progress | number | Progress percentage (0-100) |
+| progressColor | string | Progress bar color (hex) |
+| progressBarColor | string | Progress bar background color (hex) |
+| name | string | Track title |
+| nameColor | string | Title text color (hex) |
+| author | string | Artist name |
+| authorColor | string | Artist text color (hex) |
+| startTime | string | Current time (e.g., "2:30") |
+| endTime | string | Total duration (e.g., "4:00") |
+| timeColor | string | Time text color (hex) |
+
+### Example Usage
+
+```typescript
+import { MusicCardGenerator, Player } from 'aliana-client';
+import fs from 'fs';
+
+// Check if musicard is available
+if (MusicCardGenerator.isAvailable()) {
+  const player: Player = /* your player */;
+  const track = player.queue.current;
+  
+  if (track) {
+    // Generate a simple card
+    const card = await MusicCardGenerator.generateCard(track);
+    fs.writeFileSync('now-playing.png', card);
+    
+    // Generate card with progress
+    const cardWithProgress = await MusicCardGenerator.generateCardWithProgress(
+      track,
+      player.position,
+      {
+        backgroundColor: '#1a1a1a',
+        progressColor: '#00ff00',
+      },
+      'classicPro'
+    );
+    fs.writeFileSync('now-playing-progress.png', cardWithProgress);
+  }
+}
+```
 
 ---
 
