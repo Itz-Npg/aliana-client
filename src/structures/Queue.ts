@@ -84,8 +84,13 @@ export class Queue extends EventEmitter {
     const tracksToAdd = Array.isArray(track) ? track : [track];
     this.tracks.push(...tracksToAdd);
     
-    if (!isAutoPlay && this.player && typeof this.player.setAutoPlaySession === 'function') {
-      this.player.setAutoPlaySession(false);
+    if (!isAutoPlay && this.player) {
+      if (typeof this.player.setAutoPlaySession === 'function') {
+        this.player.setAutoPlaySession(false);
+      }
+      if (typeof this.player.setAutoPlay === 'function') {
+        this.player.setAutoPlay(false);
+      }
     }
     
     await this.save();
