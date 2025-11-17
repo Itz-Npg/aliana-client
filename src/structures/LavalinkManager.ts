@@ -30,6 +30,10 @@ export class LavalinkManager extends EventEmitter {
     if (!options.nodes || options.nodes.length === 0) {
       throw new Error('At least one node is required');
     }
+    
+    if (!options.sendPayload || typeof options.sendPayload !== 'function') {
+      throw new Error('sendPayload callback is required and must be a function');
+    }
 
     this.options = options;
     this.validator = new Validator(options.validationOptions);
@@ -118,6 +122,8 @@ export class LavalinkManager extends EventEmitter {
   }
 
   private async handleTrackEnd(player: Player): Promise<void> {
+    await player.queue.initialize();
+    
     if (player.queue.size > 0) {
       await player.skip();
     } else {
@@ -152,7 +158,12 @@ export class LavalinkManager extends EventEmitter {
       throw new Error('No available nodes');
     }
 
-    const player = new Player(options, node, queueStore);
+    const defaultOptions = {
+      ...this.options.playerOptions,
+      ...options,
+    };
+
+    const player = new Player(defaultOptions, node, this.options.sendPayload, queueStore);
     this.players.set(options.guildId, player);
     
     this.emit('playerCreate', player);
@@ -228,7 +239,23 @@ export class LavalinkManager extends EventEmitter {
     );
 
     if (result.tracks && result.tracks.length > 0) {
-      result.tracks = result.tracks.map(track => new Track(track, requester));
+      const trackInstances = result.tracks.map(track => new Track(track, requester));
+      
+      if (result.loadType === 'playlist' && result.playlist) {
+        const playlistValidation = this.validator.validatePlaylistSize(trackInstances.length);
+        if (!playlistValidation.valid) {
+          throw new Error(playlistValidation.reason);
+        }
+      }
+      
+      for (const track of trackInstances) {
+        const lengthValidation = this.validator.validateTrackLength(track.duration);
+        if (!lengthValidation.valid) {
+          console.warn(`Track ${track.title} validation warning: ${lengthValidation.reason}`);
+        }
+      }
+      
+      result.tracks = trackInstances as any;
     }
 
     return result;

@@ -31,14 +31,20 @@ export class Player extends EventEmitter {
   private _position: number = 0;
   private _ping: number = 0;
   private voiceState: Partial<VoiceState> = {};
+  private sendPayload: (guildId: string, payload: any) => void;
+  private selfDeaf: boolean;
+  private selfMute: boolean;
   
-  constructor(options: PlayerOptions, node: Node, store?: QueueStore) {
+  constructor(options: PlayerOptions, node: Node, sendPayload: (guildId: string, payload: any) => void, store?: QueueStore) {
     super();
     
     this.guildId = options.guildId;
     this.voiceChannelId = options.voiceChannelId;
     this.textChannelId = options.textChannelId;
     this.node = node;
+    this.sendPayload = sendPayload;
+    this.selfDeaf = options.selfDeaf ?? true;
+    this.selfMute = options.selfMute ?? false;
     
     const queueStore = store || new MemoryStore();
     this.queue = new Queue(this.guildId, queueStore);
@@ -53,6 +59,10 @@ export class Player extends EventEmitter {
     if (options.volume !== undefined) {
       this._volume = options.volume;
     }
+    
+    this.queue.initialize().catch(err => {
+      console.error(`Failed to initialize queue for ${this.guildId}:`, err);
+    });
   }
 
   get volume(): number {
@@ -79,7 +89,28 @@ export class Player extends EventEmitter {
     return this._ping;
   }
 
-  async connect(_options: ConnectOptions = {}): Promise<void> {
+  async connect(options: ConnectOptions = {}): Promise<void> {
+    if (!this.voiceChannelId) {
+      throw new Error('Cannot connect: voiceChannelId is not set');
+    }
+    
+    if (!this.sendPayload) {
+      throw new Error('Cannot connect: sendPayload callback is not configured');
+    }
+    
+    const selfDeaf = options.deaf ?? this.selfDeaf;
+    const selfMute = options.mute ?? this.selfMute;
+    
+    this.sendPayload(this.guildId, {
+      op: 4,
+      d: {
+        guild_id: this.guildId,
+        channel_id: this.voiceChannelId,
+        self_mute: selfMute,
+        self_deaf: selfDeaf,
+      },
+    });
+    
     this.voiceState = {
       sessionId: undefined,
       event: undefined,
@@ -87,6 +118,10 @@ export class Player extends EventEmitter {
     
     this.emit('connectionUpdate', 'CONNECTING');
     this._connected = true;
+  }
+  
+  async waitForQueueReady(): Promise<void> {
+    await this.queue.initialize();
   }
 
   setVoiceState(data: Partial<VoiceState>): void {
@@ -107,6 +142,8 @@ export class Player extends EventEmitter {
   }
 
   async play(options: PlayOptions = {}): Promise<void> {
+    await this.queue.initialize();
+    
     if (!this.queue.current && this.queue.size === 0) {
       throw new Error('Queue is empty');
     }
@@ -199,6 +236,7 @@ export class Player extends EventEmitter {
   }
 
   async skip(): Promise<Track | null> {
+    await this.queue.initialize();
     await this.stop();
     const nextTrack = await this.queue.next();
     

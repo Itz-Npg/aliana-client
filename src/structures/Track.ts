@@ -72,6 +72,9 @@ export class UnresolvedTrackImpl implements UnresolvedTrack {
   uri?: string;
   requester?: any;
   private resolveFunc?: () => Promise<any>;
+  private resolved: Track | null = null;
+  private resolutionAttempted: boolean = false;
+  private resolutionError: Error | null = null;
 
   constructor(data: UnresolvedTrack) {
     this.title = data.title;
@@ -83,13 +86,55 @@ export class UnresolvedTrackImpl implements UnresolvedTrack {
   }
 
   async resolve(): Promise<Track | null> {
-    if (this.resolveFunc) {
-      return await this.resolveFunc();
+    if (this.resolved) return this.resolved;
+    
+    if (this.resolutionAttempted) {
+      if (this.resolutionError) {
+        throw this.resolutionError;
+      }
+      const notFoundError = new Error(`Track "${this.title}" could not be resolved: no matching track found`);
+      this.resolutionError = notFoundError;
+      throw notFoundError;
     }
-    return null;
+    
+    this.resolutionAttempted = true;
+    
+    if (!this.resolveFunc) {
+      const noResolverError = new Error(`Track "${this.title}" has no resolver function configured`);
+      this.resolutionError = noResolverError;
+      throw noResolverError;
+    }
+    
+    try {
+      const track = await this.resolveFunc();
+      if (track) {
+        if (track instanceof Track) {
+          this.resolved = track;
+        } else if (track.encoded && track.info) {
+          this.resolved = new Track(track, this.requester);
+        } else {
+          throw new Error(`Invalid track data returned from resolver for "${this.title}": missing encoded or info`);
+        }
+        return this.resolved;
+      }
+      const notFoundError = new Error(`Track "${this.title}" could not be resolved: resolver returned null/undefined`);
+      this.resolutionError = notFoundError;
+      throw notFoundError;
+    } catch (error) {
+      this.resolutionError = error instanceof Error ? error : new Error(String(error));
+      throw this.resolutionError;
+    }
   }
 
   isResolved(): boolean {
-    return false;
+    return this.resolved !== null;
+  }
+
+  getResolved(): Track | null {
+    return this.resolved;
+  }
+  
+  getResolutionError(): Error | null {
+    return this.resolutionError;
   }
 }
