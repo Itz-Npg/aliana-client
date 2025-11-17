@@ -218,13 +218,13 @@ async function handlePlay(message: Message, args: string[]) {
     return message.reply('❌ No tracks found in search results!');
   }
 
-  for (const track of tracks) {
-    await player.queue.add(track as any);
-  }
-
   if (result.loadType === 'playlist' && !Array.isArray(result.data) && result.data.info) {
+    for (const track of tracks) {
+      await player.queue.add(track as any);
+    }
     message.reply(`📋 Added **${tracks.length}** tracks from **${result.data.info.name}** to queue!`);
   } else {
+    await player.queue.add(tracks[0] as any);
     message.reply(`✅ Added **${tracks[0].info.title}** to queue!`);
   }
 
