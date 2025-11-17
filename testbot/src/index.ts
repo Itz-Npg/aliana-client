@@ -170,7 +170,9 @@ async function handlePlay(message: Message, args: string[]) {
     return message.reply('❌ No tracks found in search results!');
   }
 
-  await player.queue.add(tracks);
+  for (const track of tracks) {
+    await player.queue.add(track as any);
+  }
 
   if (result.loadType === 'playlist' && !Array.isArray(result.data) && result.data.info) {
     message.reply(`📋 Added **${tracks.length}** tracks from **${result.data.info.name}** to queue!`);
