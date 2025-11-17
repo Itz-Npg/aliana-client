@@ -3,10 +3,11 @@
   "lavalink": {
     "nodes": [
       {
-        "identifier": "main",
-        "host": "ger.visionhost.cloud",
-        "port": 6970,
-        "password": "nobitaop"
+        "identifier": "serenetia-v4",
+        "host": "lava-v4.ajieblogs.eu.org",
+        "port": 443,
+        "password": "https://dsc.gg/ajidevserver",
+        "secure": true
       }
     ]
   }
