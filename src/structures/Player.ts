@@ -157,9 +157,7 @@ export class Player extends EventEmitter {
     const payload: any = {
       op: 'play',
       guildId: this.guildId,
-      track: {
-        encoded: track.encoded,
-      },
+      track: track.encoded,
       noReplace: options.noReplace ?? false,
       pause: options.pause ?? false,
     };

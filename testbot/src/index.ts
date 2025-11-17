@@ -52,6 +52,10 @@ manager.on('nodeConnect', (node: Node) => {
   console.log(`✅ Node "${node.options.identifier}" connected!`);
 });
 
+manager.on('nodeRaw', (node: Node, payload: any) => {
+  console.log(`📦 Raw from Lavalink:`, JSON.stringify(payload));
+});
+
 manager.on('nodeError', (node: Node, error: Error) => {
   console.error(`❌ Node "${node.options.identifier}" error:`, error.message);
 });
