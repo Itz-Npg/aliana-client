@@ -18,6 +18,10 @@ args = "build"
 task = "workflow.run"
 args = "testbot"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "docs-server"
+
 [[workflows.workflow]]
 name = "build"
 author = "agent"
@@ -40,5 +44,25 @@ outputType = "console"
 task = "shell.exec"
 args = "cd testbot && node dist/index.js"
 
+[[workflows.workflow]]
+name = "docs-server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx serve docs -l 5000"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [nix]
 channel = "stable-25_05"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 46683
+externalPort = 3000

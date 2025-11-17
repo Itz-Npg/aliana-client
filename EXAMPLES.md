@@ -181,7 +181,16 @@ const autoplayCommand = {
 };
 ```
 
-When autoplay is enabled, the bot will automatically search for and play related tracks when the queue ends, similar to Spotify. You can listen to the `autoPlayTrack` event to notify users:
+When autoplay is enabled, the bot will automatically search for and play related tracks when the queue ends, similar to Spotify's autoplay feature.
+
+**How it works:**
+- When the queue becomes empty and autoplay is enabled, the system searches for tracks related to the last played track
+- If related tracks are found, one is randomly selected and added to the queue, then playback continues
+- This process repeats each time the queue ends, creating a continuous listening experience
+- If no related tracks are found, the `queueEnd` event is emitted and playback stops
+- Disabling autoplay will stop this automatic behavior and emit `queueEnd` when the queue finishes
+
+You can listen to the `autoPlayTrack` event to notify users when an autoplay track starts:
 
 ```typescript
 manager.on('autoPlayTrack', (player, track) => {
