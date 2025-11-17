@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aliana-Client Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Aliana-Client</h1>
+                <p class="version">v1.0.2</p>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search documentation..." class="search-input">
+            </div>
+
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="#introduction" class="nav-link">Introduction</a></li>
+                    <li><a href="#features" class="nav-link">Features</a></li>
+                    <li><a href="#installation" class="nav-link">Installation</a></li>
+                    <li><a href="#quick-start" class="nav-link">Quick Start</a></li>
+                    <li class="nav-section">Core Concepts</li>
+                    <li><a href="#manager" class="nav-link">LavalinkManager</a></li>
+                    <li><a href="#player" class="nav-link">Player</a></li>
+                    <li><a href="#queue" class="nav-link">Queue System</a></li>
+                    <li><a href="#events" class="nav-link">Events</a></li>
+                    <li class="nav-section">Advanced</li>
+                    <li><a href="#autoplay" class="nav-link">Autoplay Feature</a></li>
+                    <li><a href="#filters" class="nav-link">Audio Filters</a></li>
+                    <li><a href="#custom-stores" class="nav-link">Custom Stores</a></li>
+                    <li><a href="#examples" class="nav-link">Examples</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <section id="introduction" class="section">
+                <h2>Introduction</h2>
+                <p>Aliana-Client is an easy, flexible, and feature-rich Lavalink v4 Client for both beginners and experts. This library provides a comprehensive solution for integrating Lavalink into your Discord bot or music application.</p>
+                
+                <div class="info-box">
+                    <strong>What is Lavalink?</strong>
+                    <p>Lavalink is a standalone audio sending node that allows you to play music in Discord voice channels without running the audio processing on your bot's server. This significantly reduces resource usage and improves performance.</p>
+                </div>
+            </section>
+
+            <section id="features" class="section">
+                <h2>Features</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>🚀 Lavalink v4 Native</h3>
+                        <p>Full support for Lavalink v4, including its powerful plugin ecosystem.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>✅ Detailed Player-Destroy Reasons</h3>
+                        <p>Understand precisely why a player was destroyed (e.g., channel deleted, bot disconnected).</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>✨ Flexible Queue Stores</h3>
+                        <p>Use the default in-memory store or bring your own (Redis, databases, etc.).</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎶 Unresolved Tracks</h3>
+                        <p>Supports unresolved track objects, fetching full data only when needed.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎚️ Built-in Filters & EQ</h3>
+                        <p>Easy-to-use management for audio filters and equalizers.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚙️ Advanced Player Options</h3>
+                        <p>Fine-tune player behavior for disconnects, empty queues, volume handling, and more.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="installation" class="section">
+                <h2>Installation</h2>
+                <p>Install the aliana-client package using your preferred package manager:</p>
+                
+                <div class="code-tabs">
+                    <button class="tab-button active" data-tab="npm">NPM</button>
+                    <button class="tab-button" data-tab="yarn">Yarn</button>
+                    <button class="tab-button" data-tab="pnpm">pnpm</button>
+                    <button class="tab-button" data-tab="bun">Bun</button>
+                </div>
+
+                <div class="tab-content active" id="npm">
+                    <pre><code class="language-bash">npm install --save aliana-client</code></pre>
+                </div>
+                <div class="tab-content" id="yarn">
+                    <pre><code class="language-bash">yarn add aliana-client</code></pre>
+                </div>
+                <div class="tab-content" id="pnpm">
+                    <pre><code class="language-bash">pnpm add aliana-client</code></pre>
+                </div>
+                <div class="tab-content" id="bun">
+                    <pre><code class="language-bash">bun add aliana-client</code></pre>
+                </div>
+            </section>
+
+            <section id="quick-start" class="section">
+                <h2>Quick Start</h2>
+                <p>Here's a minimal example to get you started quickly:</p>
+
+                <pre><code class="language-typescript">import { LavalinkManager } from "aliana-client";
+import { Client, GatewayIntentBits } from "discord.js";
+
+// Extend the Client type to include the lavalink manager
+declare module "discord.js" {
+    interface Client {
+        lavalink: LavalinkManager;
+    }
+}
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+    ]
+});
+
+client.lavalink = new LavalinkManager({
+    nodes: [
+        {
+            authorization: "youshallnotpass",
+            host: "localhost",
+            port: 2333,
+            id: "Main Node",
+        }
+    ],
+    sendToShard: (guildId, payload) => {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild) guild.shard.send(payload);
+    },
+    autoSkip: true,
+    client: {
+        id: process.env.CLIENT_ID,
+        username: "MyBot",
+    },
+});
+
+// Listen for the 'raw' event and forward it
+client.on("raw", (d) => client.lavalink.sendRawData(d));
+
+client.on("ready", () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+    client.lavalink.init({ ...client.user });
+});
+
+client.login(process.env.DISCORD_TOKEN);</code></pre>
+            </section>
+
+            <section id="manager" class="section">
+                <h2>LavalinkManager</h2>
+                <p>The <code>LavalinkManager</code> is the core class that manages all Lavalink nodes and players.</p>
+
+                <h3>Creating a Manager</h3>
+                <pre><code class="language-typescript">const manager = new LavalinkManager({
+    nodes: [
+        {
+            authorization: "your-password",
+            host: "localhost",
+            port: 2333,
+            id: "Main Node",
+        }
+    ],
+    sendToShard: (guildId, payload) => {
+        // Send payload to Discord gateway
+    },
+    autoSkip: true,
+    client: {
+        id: "your-bot-id",
+        username: "YourBot",
+    },
+});</code></pre>
+
+                <h3>Key Methods</h3>
+                <table class="methods-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>init(clientData)</code></td>
+                            <td>Initialize the manager with Discord client data</td>
+                        </tr>
+                        <tr>
+                            <td><code>createPlayer(options)</code></td>
+                            <td>Create a new player for a guild</td>
+                        </tr>
+                        <tr>
+                            <td><code>getPlayer(guildId)</code></td>
+                            <td>Get an existing player by guild ID</td>
+                        </tr>
+                        <tr>
+                            <td><code>search(query, requester, platform)</code></td>
+                            <td>Search for tracks on a specific platform</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="player" class="section">
+                <h2>Player</h2>
+                <p>The <code>Player</code> class represents a music player for a specific guild.</p>
+
+                <h3>Creating a Player</h3>
+                <pre><code class="language-typescript">const player = manager.createPlayer({
+    guildId: interaction.guildId,
+    voiceChannelId: interaction.member.voice.channelId,
+    textChannelId: interaction.channelId,
+});
+
+await player.connect();</code></pre>
+
+                <h3>Playing Tracks</h3>
+                <pre><code class="language-typescript">// Search for a track
+const result = await manager.search("Despacito", interaction.user, "youtube");
+
+// Add to queue
+await player.queue.add(result.tracks[0]);
+
+// Start playing
+await player.play();</code></pre>
+
+                <h3>Player Properties</h3>
+                <table class="methods-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>volume</code></td>
+                            <td>number</td>
+                            <td>Current volume (0-100)</td>
+                        </tr>
+                        <tr>
+                            <td><code>playing</code></td>
+                            <td>boolean</td>
+                            <td>Whether a track is currently playing</td>
+                        </tr>
+                        <tr>
+                            <td><code>paused</code></td>
+                            <td>boolean</td>
+                            <td>Whether playback is paused</td>
+                        </tr>
+                        <tr>
+                            <td><code>position</code></td>
+                            <td>number</td>
+                            <td>Current playback position in milliseconds</td>
+                        </tr>
+                        <tr>
+                            <td><code>autoPlay</code></td>
+                            <td>boolean</td>
+                            <td>Whether autoplay is enabled</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="queue" class="section">
+                <h2>Queue System</h2>
+                <p>The queue system manages the list of tracks to be played.</p>
+
+                <h3>Adding Tracks</h3>
+                <pre><code class="language-typescript">// Add a single track
+await player.queue.add(track);
+
+// Add multiple tracks
+await player.queue.add([track1, track2, track3]);</code></pre>
+
+                <h3>Queue Operations</h3>
+                <pre><code class="language-typescript">// Remove a track
+await player.queue.remove(0);
+
+// Clear the queue
+await player.queue.clear();
+
+// Shuffle the queue
+await player.queue.shuffle();
+
+// Get queue information
+console.log(player.queue.size);       // Number of tracks
+console.log(player.queue.duration);   // Total duration in ms
+console.log(player.queue.current);    // Currently playing track</code></pre>
+            </section>
+
+            <section id="events" class="section">
+                <h2>Events</h2>
+                <p>Listen to various events to create interactive and responsive logic.</p>
+
+                <h3>Manager Events</h3>
+                <pre><code class="language-typescript">// Track started playing
+manager.on('trackStart', (player, track) => {
+    console.log(`Now playing: ${track.info.title}`);
+});
+
+// Track ended
+manager.on('trackEnd', (player, track, reason) => {
+    console.log(`Track ended: ${reason}`);
+});
+
+// Queue ended
+manager.on('queueEnd', (player) => {
+    console.log('Queue has finished');
+    player.destroy();
+});
+
+// Track error
+manager.on('trackError', (player, track, error) => {
+    console.error(`Error playing ${track.info.title}:`, error);
+});
+
+// Autoplay track
+manager.on('autoPlayTrack', (player, track) => {
+    console.log(`Autoplay: ${track.info.title}`);
+});</code></pre>
+
+                <h3>Available Events</h3>
+                <table class="methods-table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Parameters</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>trackStart</code></td>
+                            <td>player, track</td>
+                            <td>Emitted when a track starts playing</td>
+                        </tr>
+                        <tr>
+                            <td><code>trackEnd</code></td>
+                            <td>player, track, reason</td>
+                            <td>Emitted when a track ends</td>
+                        </tr>
+                        <tr>
+                            <td><code>trackError</code></td>
+                            <td>player, track, error</td>
+                            <td>Emitted when a track encounters an error</td>
+                        </tr>
+                        <tr>
+                            <td><code>trackStuck</code></td>
+                            <td>player, track, threshold</td>
+                            <td>Emitted when a track gets stuck</td>
+                        </tr>
+                        <tr>
+                            <td><code>queueEnd</code></td>
+                            <td>player</td>
+                            <td>Emitted when the queue finishes</td>
+                        </tr>
+                        <tr>
+                            <td><code>autoPlayTrack</code></td>
+                            <td>player, track</td>
+                            <td>Emitted when autoplay plays a track</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="autoplay" class="section">
+                <h2>Autoplay Feature</h2>
+                <p>The autoplay feature automatically finds and plays related tracks when your queue ends, similar to Spotify's autoplay.</p>
+
+                <div class="info-box">
+                    <strong>How Autoplay Works</strong>
+                    <p>When the queue becomes empty and autoplay is enabled:</p>
+                    <ul>
+                        <li>The system searches for tracks related to the last played track</li>
+                        <li>If related tracks are found, one is randomly selected and played</li>
+                        <li>This process repeats each time the queue ends, creating continuous playback</li>
+                        <li>If no related tracks are found, the queueEnd event is emitted and playback stops</li>
+                        <li>Disabling autoplay stops this automatic behavior</li>
+                    </ul>
+                </div>
+
+                <h3>Enabling Autoplay</h3>
+                <pre><code class="language-typescript">// Enable autoplay
+player.setAutoPlay(true);
+
+// Disable autoplay
+player.setAutoPlay(false);
+
+// Check autoplay status
+console.log(player.autoPlay); // true or false</code></pre>
+
+                <h3>Example Command</h3>
+                <pre><code class="language-typescript">const autoplayCommand = {
+    data: new SlashCommandBuilder()
+        .setName('autoplay')
+        .setDescription('Toggle autoplay'),
+    async execute(interaction) {
+        const player = manager.getPlayer(interaction.guildId);
+        
+        if (!player) {
+            return interaction.reply('No player found!');
+        }
+
+        player.setAutoPlay(!player.autoPlay);
+
+        return interaction.reply(
+            player.autoPlay
+                ? '✅ Autoplay enabled!'
+                : '❌ Autoplay disabled.'
+        );
+    },
+};</code></pre>
+
+                <h3>Listening to Autoplay Events</h3>
+                <pre><code class="language-typescript">manager.on('autoPlayTrack', (player, track) => {
+    const channel = client.channels.cache.get(player.textChannelId);
+    if (channel && 'send' in channel) {
+        channel.send(`🎵 Autoplay: Now playing **${track.info.title}**`);
+    }
+});</code></pre>
+            </section>
+
+            <section id="filters" class="section">
+                <h2>Audio Filters</h2>
+                <p>Apply various audio filters to customize the sound output.</p>
+
+                <h3>Available Filters</h3>
+                <pre><code class="language-typescript">// Bass boost
+await player.filters.setBassBoost(0.5); // 0-1
+
+// Nightcore (speed up + higher pitch)
+await player.filters.setNightcore(1.2);
+
+// Vaporwave (slow down + lower pitch)
+await player.filters.setVaporwave(0.8);
+
+// 8D Audio
+await player.filters.set8D(true);
+
+// Karaoke
+await player.filters.setKaraoke(true);
+
+// Tremolo
+await player.filters.setTremolo(4.0, 0.5);
+
+// Clear all filters
+await player.filters.clear();</code></pre>
+
+                <h3>Custom Equalizer</h3>
+                <pre><code class="language-typescript">// Set custom EQ bands (0-14)
+await player.filters.setEqualizer([
+    { band: 0, gain: 0.2 },
+    { band: 1, gain: 0.3 },
+    { band: 2, gain: 0.1 },
+]);</code></pre>
+            </section>
+
+            <section id="custom-stores" class="section">
+                <h2>Custom Queue Stores</h2>
+                <p>Implement custom queue storage to persist queues across restarts or sync them across multiple processes.</p>
+
+                <h3>Redis Store Example</h3>
+                <pre><code class="language-typescript">import { QueueStore, StoredQueue } from "aliana-client";
+import { RedisClientType } from "redis";
+
+class RedisQueueStore implements QueueStore {
+    private redis: RedisClientType;
+
+    constructor(redisClient: RedisClientType) {
+        this.redis = redisClient;
+    }
+
+    private key(guildId: string) {
+        return `lavalinkqueue_${guildId}`;
+    }
+
+    async get(guildId: string): Promise<string | null> {
+        return await this.redis.get(this.key(guildId));
+    }
+
+    async set(guildId: string, data: string): Promise<void> {
+        await this.redis.set(this.key(guildId), data);
+    }
+
+    async delete(guildId: string): Promise<void> {
+        await this.redis.del(this.key(guildId));
+    }
+
+    async parse(data: string): Promise<Partial<StoredQueue>> {
+        return JSON.parse(data);
+    }
+
+    stringify(data: Partial<StoredQueue>): string {
+        return JSON.stringify(data);
+    }
+}
+
+// Use the custom store
+const manager = new LavalinkManager({
+    // ... other options
+    queueOptions: {
+        queueStore: new RedisQueueStore(redisClient),
+    },
+});</code></pre>
+            </section>
+
+            <section id="examples" class="section">
+                <h2>Complete Examples</h2>
+                
+                <h3>Play Command</h3>
+                <pre><code class="language-typescript">const playCommand = {
+    data: new SlashCommandBuilder()
+        .setName('play')
+        .setDescription('Play a song')
+        .addStringOption(option =>
+            option.setName('query')
+                .setDescription('Song name or URL')
+                .setRequired(true)
+        ),
+    async execute(interaction) {
+        await interaction.deferReply();
+
+        // Get or create player
+        let player = manager.getPlayer(interaction.guildId);
+        if (!player) {
+            player = manager.createPlayer({
+                guildId: interaction.guildId,
+                voiceChannelId: interaction.member.voice.channelId,
+                textChannelId: interaction.channelId,
+            });
+            await player.connect();
+        }
+
+        // Search for the track
+        const query = interaction.options.getString('query');
+        const result = await manager.search(query, interaction.user, 'youtube');
+
+        if (!result.tracks || result.tracks.length === 0) {
+            return interaction.editReply('No results found!');
+        }
+
+        const track = result.tracks[0];
+        await player.queue.add(track);
+
+        // Start playing if not already playing
+        if (!player.playing && !player.paused) {
+            await player.play();
+        }
+
+        return interaction.editReply(
+            `Added to queue: **${track.info.title}** by ${track.info.author}`
+        );
+    },
+};</code></pre>
+
+                <h3>Queue Command</h3>
+                <pre><code class="language-typescript">const queueCommand = {
+    data: new SlashCommandBuilder()
+        .setName('queue')
+        .setDescription('Show the current queue'),
+    async execute(interaction) {
+        const player = manager.getPlayer(interaction.guildId);
+        
+        if (!player || player.queue.isEmpty) {
+            return interaction.reply('Queue is empty!');
+        }
+
+        const current = player.queue.current;
+        const upcoming = player.queue.tracks.slice(0, 10);
+
+        let description = `**Now Playing:**\n${current.info.title}\n\n`;
+        
+        if (upcoming.length > 0) {
+            description += '**Up Next:**\n';
+            upcoming.forEach((track, i) => {
+                description += `${i + 1}. ${track.info.title}\n`;
+            });
+        }
+
+        return interaction.reply({
+            embeds: [{
+                title: 'Queue',
+                description,
+                color: 0x5865F2,
+            }]
+        });
+    },
+};</code></pre>
+            </section>
+
+            <footer class="footer">
+                <p>Made by npg</p>
+                <p><a href="https://github.com/tomato6966/aliana-client" target="_blank">GitHub</a> | <a href="https://discord.gg/5dUb7M2qCj" target="_blank">Discord Support</a></p>
+            </footer>
+        </main>
+    </div>
+
+    <button id="backToTop" class="back-to-top" title="Back to top">↑</button>
+    
+    <div class="particles" id="particles"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
