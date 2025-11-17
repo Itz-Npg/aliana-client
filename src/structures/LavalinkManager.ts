@@ -5,6 +5,7 @@ import type {
   SearchResult,
   SearchPlatform,
   QueueStore,
+  PlaylistInfo,
 } from '../types';
 import { Node } from './Node';
 import { Player } from './Player';
@@ -234,14 +235,26 @@ export class LavalinkManager extends EventEmitter {
       }
     }
 
-    const result = await node.request<SearchResult>(
+    const result = await node.request<any>(
       `/loadtracks?identifier=${encodeURIComponent(searchQuery)}`
     );
 
-    if (result.tracks && result.tracks.length > 0) {
-      const trackInstances = result.tracks.map(track => new Track(track, requester));
+    let tracks: Track[] = [];
+    let playlistInfo: PlaylistInfo | undefined;
+
+    if (result.loadType === 'search' || result.loadType === 'track') {
+      tracks = Array.isArray(result.data) ? result.data : [];
+    } else if (result.loadType === 'playlist') {
+      if (result.data && typeof result.data === 'object' && 'tracks' in result.data) {
+        tracks = result.data.tracks || [];
+        playlistInfo = result.data.info;
+      }
+    }
+
+    if (tracks.length > 0) {
+      const trackInstances = tracks.map(track => new Track(track, requester));
       
-      if (result.loadType === 'playlist' && result.playlist) {
+      if (result.loadType === 'playlist' && playlistInfo) {
         const playlistValidation = this.validator.validatePlaylistSize(trackInstances.length);
         if (!playlistValidation.valid) {
           throw new Error(playlistValidation.reason);
@@ -255,10 +268,15 @@ export class LavalinkManager extends EventEmitter {
         }
       }
       
-      result.tracks = trackInstances as any;
+      tracks = trackInstances as any;
     }
 
-    return result;
+    return {
+      loadType: result.loadType,
+      data: result.loadType === 'playlist' && playlistInfo
+        ? { info: playlistInfo, pluginInfo: {}, tracks }
+        : tracks,
+    } as SearchResult;
   }
 
   updateVoiceState(data: any): void {

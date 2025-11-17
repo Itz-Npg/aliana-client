@@ -43,11 +43,11 @@ client.on('voiceStateUpdate', (oldState: VoiceState, newState: VoiceState) => {
 });
 
 manager.on('nodeConnect', (node) => {
-  console.log(`✅ Node "${node.options.id}" connected!`);
+  console.log(`✅ Node "${node.options.identifier}" connected!`);
 });
 
 manager.on('nodeError', (node, error) => {
-  console.error(`❌ Node "${node.options.id}" error:`, error.message);
+  console.error(`❌ Node "${node.options.identifier}" error:`, error.message);
 });
 
 manager.on('trackStart', (player, track) => {
@@ -161,20 +161,22 @@ async function handlePlay(message: Message, args: string[]) {
     return message.reply('❌ No results found!');
   }
 
-  const tracks = result.loadType === 'track' 
-    ? [result.tracks[0]]
-    : result.loadType === 'playlist'
-    ? result.tracks
-    : result.loadType === 'search'
-    ? [result.tracks[0]]
+  const tracks = Array.isArray(result.data) 
+    ? result.data 
+    : result.data && 'tracks' in result.data 
+    ? result.data.tracks 
     : [];
+
+  if (tracks.length === 0) {
+    return message.reply('❌ No tracks found in search results!');
+  }
 
   for (const track of tracks) {
     player.queue.add(track as any as Track);
   }
 
-  if (result.loadType === 'playlist' && result.playlist) {
-    message.reply(`📋 Added **${tracks.length}** tracks from **${result.playlist.name}** to queue!`);
+  if (result.loadType === 'playlist' && !Array.isArray(result.data) && result.data.info) {
+    message.reply(`📋 Added **${tracks.length}** tracks from **${result.data.info.name}** to queue!`);
   } else {
     message.reply(`✅ Added **${tracks[0].info.title}** to queue!`);
   }

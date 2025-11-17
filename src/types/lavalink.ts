@@ -79,9 +79,11 @@ export interface UnresolvedTrack {
 
 export interface SearchResult {
   loadType: 'track' | 'playlist' | 'search' | 'empty' | 'error';
-  tracks: Track[];
-  playlist?: PlaylistInfo;
-  exception?: ExceptionInfo;
+  data: Track[] | {
+    info: PlaylistInfo;
+    pluginInfo: Record<string, any>;
+    tracks: Track[];
+  };
 }
 
 export interface PlaylistInfo {
