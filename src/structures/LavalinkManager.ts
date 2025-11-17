@@ -182,15 +182,24 @@ export class LavalinkManager extends EventEmitter {
       
       const last25Tracks = new Set(history.queue.slice(-25));
       
+      const trackTitle = track.info.title.toLowerCase();
+      const titleWords = track.info.title.split(' ').filter(w => 
+        !['official', 'audio', 'video', 'lyrics', 'lyric', 'hd', '4k', 'mv'].includes(w.toLowerCase())
+      );
+      const cleanTitle = titleWords.slice(0, 4).join(' ');
+      
       const searchStrategies = [
-        `${track.info.author} songs`,
-        `${track.info.author} popular`,
-        `similar to ${track.info.title}`,
-        `${track.info.title.split(' ').slice(0, 3).join(' ')} type beat`,
+        `${track.info.author} popular songs`,
+        `${track.info.author} top hits`,
+        `${cleanTitle} similar songs`,
+        `${track.info.author} latest`,
+        `artists like ${track.info.author}`,
+        `${cleanTitle.split(' ')[0]} ${track.info.author}`,
       ];
       
       const allCandidates: Track[] = [];
       const seenIdentifiers = new Set<string>();
+      seenIdentifiers.add(track.info.identifier);
       
       for (const strategy of searchStrategies) {
         try {
@@ -200,20 +209,26 @@ export class LavalinkManager extends EventEmitter {
             const tracks = result.data as any as Track[];
             
             for (const t of tracks) {
+              const candidateTitle = t.info.title.toLowerCase();
+              const isSameTitle = candidateTitle === trackTitle;
+              const isTooSimilar = candidateTitle.includes(trackTitle.substring(0, 20)) || 
+                                   trackTitle.includes(candidateTitle.substring(0, 20));
+              
               if (
                 !seenIdentifiers.has(t.info.identifier) &&
                 !last25Tracks.has(t.info.identifier) &&
-                t.info.identifier !== track.info.identifier
+                !isSameTitle &&
+                !isTooSimilar
               ) {
                 seenIdentifiers.add(t.info.identifier);
                 allCandidates.push(t);
               }
               
-              if (allCandidates.length >= 15) break;
+              if (allCandidates.length >= 20) break;
             }
           }
           
-          if (allCandidates.length >= 15) break;
+          if (allCandidates.length >= 20) break;
         } catch (error) {
           console.warn(`Search strategy "${strategy}" failed:`, error);
           continue;
@@ -221,15 +236,18 @@ export class LavalinkManager extends EventEmitter {
       }
       
       if (allCandidates.length === 0) {
-        const fallbackQuery = `${track.info.author}`;
+        const fallbackQuery = `${track.info.author} mix`;
         const fallbackResult = await this.search(fallbackQuery, track.requester, 'youtube');
         
         if (fallbackResult.loadType === 'search' && Array.isArray(fallbackResult.data)) {
           const tracks = fallbackResult.data as any as Track[];
-          return tracks.filter((t) => 
-            !last25Tracks.has(t.info.identifier) &&
-            t.info.identifier !== track.info.identifier
-          ).slice(0, 15);
+          const trackTitle = track.info.title.toLowerCase();
+          return tracks.filter((t) => {
+            const candidateTitle = t.info.title.toLowerCase();
+            return !last25Tracks.has(t.info.identifier) &&
+              !seenIdentifiers.has(t.info.identifier) &&
+              candidateTitle !== trackTitle;
+          }).slice(0, 20);
         }
       }
       
