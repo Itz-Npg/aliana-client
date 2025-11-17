@@ -9,6 +9,7 @@ export { Validator } from './utils/Validator';
 export { AudioNormalizer } from './utils/AudioNormalizer';
 export { MemoryStore } from './stores/MemoryStore';
 export { RedisStoreAdapter, type RedisClient } from './stores/RedisStoreAdapter';
+export { DestroyReasons } from './types/lavalink';
 
 export type {
   NodeOptions,
@@ -38,7 +39,6 @@ export type {
   DistortionFilter,
   ChannelMixFilter,
   LowPassFilter,
-  DestroyReasons,
   NodeStats,
   LavalinkNodeInfo,
   PluginInfo,

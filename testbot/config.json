@@ -3,10 +3,10 @@
   "lavalink": {
     "nodes": [
       {
-        "id": "main",
-        "host": "localhost",
-        "port": 2333,
-        "password": "youshallnotpass"
+        "identifier": "main",
+        "host": "ger.visionhost.cloud",
+        "port": 6970,
+        "password": "nobitaop"
       }
     ]
   }
