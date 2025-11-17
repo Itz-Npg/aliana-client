@@ -11,6 +11,7 @@ export class Node extends EventEmitter {
   public options: ProcessedNodeOptions;
   public stats: NodeStats | null = null;
   public info: LavalinkNodeInfo | null = null;
+  public sessionId: string | null = null;
   
   private ws: WebSocket | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
@@ -92,6 +93,7 @@ export class Node extends EventEmitter {
 
       switch (payload.op) {
         case 'ready':
+          this.sessionId = payload.sessionId || null;
           this.info = null;
           await this.fetchInfo();
           this.emit('ready', payload);
@@ -146,6 +148,7 @@ export class Node extends EventEmitter {
     if (!this.isConnected) {
       throw new Error(`Node ${this.identifier} is not connected`);
     }
+    console.log(`📤 Sending to Lavalink:`, JSON.stringify(payload));
     this.ws!.send(JSON.stringify(payload));
   }
 
@@ -172,5 +175,52 @@ export class Node extends EventEmitter {
     });
 
     return await response.body.json() as T;
+  }
+
+  async updatePlayer(options: {
+    guildId: string;
+    playerOptions?: {
+      track?: { encoded?: string; identifier?: string; userData?: any };
+      position?: number;
+      endTime?: number;
+      volume?: number;
+      paused?: boolean;
+      filters?: any;
+      voice?: {
+        token: string;
+        endpoint: string;
+        sessionId: string;
+      };
+    };
+    noReplace?: boolean;
+  }): Promise<any> {
+    if (!this.sessionId) {
+      throw new Error('No session ID available');
+    }
+
+    const { request } = await import('undici');
+    const body: any = {
+      ...options.playerOptions,
+    };
+
+    if (options.noReplace !== undefined) {
+      body.noReplace = options.noReplace;
+    }
+
+    console.log(`📤 REST updatePlayer:`, JSON.stringify(body));
+
+    const response = await request(
+      `${this.restAddress}/sessions/${this.sessionId}/players/${options.guildId}?noReplace=${options.noReplace || false}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': this.options.password,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    return await response.body.json();
   }
 }
