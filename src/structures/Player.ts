@@ -31,6 +31,7 @@ export class Player extends EventEmitter {
   private _position: number = 0;
   private _ping: number = 0;
   private _autoPlay: boolean = false;
+  private _inAutoPlaySession: boolean = false;
   private _lastPlayedTrack: Track | null = null;
   private voiceState: Partial<VoiceState> = {};
   private sendPayload: (guildId: string, payload: any) => void;
@@ -97,6 +98,17 @@ export class Player extends EventEmitter {
 
   setAutoPlay(enabled: boolean): void {
     this._autoPlay = enabled;
+    if (!enabled) {
+      this._inAutoPlaySession = false;
+    }
+  }
+
+  get inAutoPlaySession(): boolean {
+    return this._inAutoPlaySession;
+  }
+
+  setAutoPlaySession(active: boolean): void {
+    this._inAutoPlaySession = active;
   }
 
   get lastPlayedTrack(): Track | null {

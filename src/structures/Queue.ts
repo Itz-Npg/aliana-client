@@ -11,11 +11,16 @@ export class Queue extends EventEmitter {
   private initPromise: Promise<void> | null = null;
   private initialized: boolean = false;
   private modified: boolean = false;
+  private player: any;
   
   constructor(guildId: string, store: QueueStore) {
     super();
     this.guildId = guildId;
     this.store = store;
+  }
+  
+  setPlayer(player: any): void {
+    this.player = player;
   }
   
   async initialize(): Promise<void> {
@@ -73,11 +78,16 @@ export class Queue extends EventEmitter {
            (this.current?.duration || 0);
   }
 
-  async add(track: Track | Track[]): Promise<void> {
+  async add(track: Track | Track[], isAutoPlay: boolean = false): Promise<void> {
     await this.ensureInitialized();
     this.markModified();
     const tracksToAdd = Array.isArray(track) ? track : [track];
     this.tracks.push(...tracksToAdd);
+    
+    if (!isAutoPlay && this.player && typeof this.player.setAutoPlaySession === 'function') {
+      this.player.setAutoPlaySession(false);
+    }
+    
     await this.save();
     this.emit('add', tracksToAdd);
   }
