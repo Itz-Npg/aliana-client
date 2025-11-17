@@ -44,12 +44,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aliana/aliana-client.git"
+    "url": "https://github.com/Itz-Npg/aliana-client.git"
   },
   "bugs": {
-    "url": "https://github.com/aliana/aliana-client/issues"
+    "url": "https://github.com/Itz-Npg/aliana-client/issues"
   },
-  "homepage": "https://github.com/aliana/aliana-client#readme",
+  "homepage": "https://github.com/Itz-Npg/aliana-client#readme",
   "devDependencies": {
     "@types/node": "^20.19.25",
     "@types/ws": "^8.5.10",
