@@ -132,12 +132,18 @@ export class Player extends EventEmitter {
     }
   }
 
-  private sendVoiceUpdate(): void {
-    this.node.send({
-      op: 'voiceUpdate',
+  private async sendVoiceUpdate(): Promise<void> {
+    if (!this.voiceState.sessionId || !this.voiceState.event) return;
+    
+    await this.node.updatePlayer({
       guildId: this.guildId,
-      sessionId: this.voiceState.sessionId,
-      event: this.voiceState.event,
+      playerOptions: {
+        voice: {
+          token: this.voiceState.event.token,
+          endpoint: this.voiceState.event.endpoint,
+          sessionId: this.voiceState.sessionId,
+        },
+      },
     });
   }
 
@@ -154,30 +160,36 @@ export class Player extends EventEmitter {
       if (!track) throw new Error('No track to play');
     }
 
-    const payload: any = {
-      op: 'play',
-      guildId: this.guildId,
-      track: track.encoded,
-      noReplace: options.noReplace ?? false,
-      pause: options.pause ?? false,
+    const playerOptions: any = {
+      track: {
+        encoded: track.encoded,
+      },
     };
 
-    if (options.startTime) payload.position = options.startTime;
-    if (options.endTime) payload.endTime = options.endTime;
+    if (options.startTime) playerOptions.position = options.startTime;
+    if (options.endTime) playerOptions.endTime = options.endTime;
+    if (options.pause !== undefined) playerOptions.paused = options.pause;
     if (options.volume !== undefined) {
-      payload.volume = this.normalizer.normalize(options.volume);
+      playerOptions.volume = this.normalizer.normalize(options.volume);
       this._volume = options.volume;
     }
 
-    this.node.send(payload);
+    await this.node.updatePlayer({
+      guildId: this.guildId,
+      noReplace: options.noReplace ?? false,
+      playerOptions,
+    });
+
     this._playing = true;
     this._paused = options.pause ?? false;
   }
 
   async stop(): Promise<void> {
-    this.node.send({
-      op: 'stop',
+    await this.node.updatePlayer({
       guildId: this.guildId,
+      playerOptions: {
+        track: { encoded: null as any },
+      },
     });
     
     this._playing = false;
@@ -186,10 +198,11 @@ export class Player extends EventEmitter {
   }
 
   async pause(pause: boolean = true): Promise<void> {
-    this.node.send({
-      op: 'pause',
+    await this.node.updatePlayer({
       guildId: this.guildId,
-      pause,
+      playerOptions: {
+        paused: pause,
+      },
     });
     
     this._paused = pause;
@@ -204,10 +217,11 @@ export class Player extends EventEmitter {
       throw new Error('No track is currently playing');
     }
 
-    this.node.send({
-      op: 'seek',
+    await this.node.updatePlayer({
       guildId: this.guildId,
-      position: Math.max(0, position),
+      playerOptions: {
+        position: Math.max(0, position),
+      },
     });
     
     this._position = position;
@@ -226,10 +240,11 @@ export class Player extends EventEmitter {
       this._volume
     );
 
-    this.node.send({
-      op: 'filters',
+    await this.node.updatePlayer({
       guildId: this.guildId,
-      ...normalizedFilters,
+      playerOptions: {
+        filters: normalizedFilters,
+      },
     });
   }
 
@@ -247,10 +262,16 @@ export class Player extends EventEmitter {
   }
 
   async destroy(reason: DestroyReasons = DestroyReasons.Cleanup): Promise<void> {
-    this.node.send({
-      op: 'destroy',
-      guildId: this.guildId,
-    });
+    const { request } = await import('undici');
+    await request(
+      `${this.node.restAddress}/sessions/${this.node.sessionId}/players/${this.guildId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': this.node.options.password,
+        },
+      }
+    );
 
     await this.queue.clear();
     this._connected = false;
