@@ -1,0 +1,70 @@
+{
+  "name": "aliana-client",
+  "version": "1.0.0",
+  "description": "A premium TypeScript Lavalink v4 client with enhanced audio quality, advanced features, and comprehensive documentation",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "docs:dev": "cd docs && npm run dev",
+    "docs:build": "cd docs && npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "lavalink",
+    "lavalink-client",
+    "lavalink-v4",
+    "discord",
+    "music",
+    "audio",
+    "discord-bot",
+    "music-bot",
+    "typescript",
+    "audio-player",
+    "queue",
+    "filters",
+    "equalizer"
+  ],
+  "author": "Aliana",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aliana/aliana-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aliana/aliana-client/issues"
+  },
+  "homepage": "https://github.com/aliana/aliana-client#readme",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "prettier": "^3.1.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "undici": "^6.0.0",
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
