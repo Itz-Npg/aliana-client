@@ -55,6 +55,7 @@ manager.on('trackStart', (player: Player, track: Track) => {});
 manager.on('trackEnd', (player: Player, track: Track, reason: TrackEndReason) => {});
 manager.on('trackError', (player: Player, track: Track, error: TrackException) => {});
 manager.on('trackStuck', (player: Player, track: Track, thresholdMs: number) => {});
+manager.on('autoPlayTrack', (player: Player, track: Track) => {});
 manager.on('queueEnd', (player: Player) => {});
 manager.on('playerCreate', (player: Player) => {});
 manager.on('playerDestroy', (player: Player, reason: DestroyReasons) => {});
@@ -82,6 +83,7 @@ Represents a music player for a guild.
 | connected | boolean | Whether player is connected |
 | position | number | Current track position in ms |
 | ping | number | Player ping in ms |
+| autoPlay | boolean | Whether autoplay is enabled |
 
 ### Methods
 
@@ -111,6 +113,9 @@ Skip to next track.
 
 #### `destroy(reason?: DestroyReasons): Promise<void>`
 Destroy the player.
+
+#### `setAutoPlay(enabled: boolean): void`
+Enable or disable autoplay. When enabled, the player will automatically play related YouTube tracks when the queue ends.
 
 ---
 

@@ -20,6 +20,7 @@ export interface ManagerEvents {
   trackStuck: [player: Player, track: Track, thresholdMs: number];
   trackError: [player: Player, track: Track, error: TrackException];
   
+  autoPlayTrack: [player: Player, track: Track];
   queueEnd: [player: Player];
   
   socketClosed: [player: Player, code: number, reason: string, byRemote: boolean];

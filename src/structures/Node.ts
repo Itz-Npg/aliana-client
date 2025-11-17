@@ -76,14 +76,40 @@ export class Node extends EventEmitter {
     this.ws.on('close', this.onClose.bind(this));
   }
 
-  private onOpen(): void {
+  private async onOpen(): Promise<void> {
     this.connected = true;
     this.reconnectAttempts = 0;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    
+    if (this.options.resumeKey && this.sessionId) {
+      try {
+        await this.configureResuming();
+      } catch (error) {
+        console.error('Failed to configure session resuming:', error);
+      }
+    }
+    
     this.emit('connect');
+  }
+
+  private async configureResuming(): Promise<void> {
+    if (!this.sessionId || !this.options.resumeKey) return;
+    
+    const { request } = await import('undici');
+    await request(`${this.restAddress}/sessions/${this.sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': this.options.password,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        resuming: true,
+        timeout: this.options.resumeTimeout,
+      }),
+    });
   }
 
   private async onMessage(data: WebSocket.Data): Promise<void> {

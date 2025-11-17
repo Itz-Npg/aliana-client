@@ -156,6 +156,42 @@ const skipCommand = {
 };
 ```
 
+## Autoplay Command
+
+```typescript
+const autoplayCommand = {
+  data: new SlashCommandBuilder()
+    .setName('autoplay')
+    .setDescription('Toggle autoplay (plays related YouTube tracks when queue ends)'),
+  async execute(interaction) {
+    const player = manager.getPlayer(interaction.guildId);
+    
+    if (!player) {
+      return interaction.reply('No player found! Use /play first.');
+    }
+
+    player.setAutoPlay(!player.autoPlay);
+
+    return interaction.reply(
+      player.autoPlay
+        ? '✅ Autoplay **enabled**. I will play related YouTube tracks when the queue ends!'
+        : '❌ Autoplay **disabled**. Music will stop when the queue ends.'
+    );
+  },
+};
+```
+
+When autoplay is enabled, the bot will automatically search for and play related tracks when the queue ends, similar to Spotify. You can listen to the `autoPlayTrack` event to notify users:
+
+```typescript
+manager.on('autoPlayTrack', (player, track) => {
+  const channel = client.channels.cache.get(player.textChannelId!);
+  if (channel?.isTextBased()) {
+    channel.send(`🎵 Autoplay: Now playing **${track.title}** by ${track.author}`);
+  }
+});
+```
+
 ## Audio Filters
 
 ```typescript

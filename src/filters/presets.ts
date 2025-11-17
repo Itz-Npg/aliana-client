@@ -1,8 +1,8 @@
 import type { FilterData } from '../types';
 
 export const FILTER_PRESETS = {
-  bassBoost: (level: number = 0.5): FilterData => {
-    const gain = Math.max(0, Math.min(1, level));
+  bassBoost: (level?: number): FilterData => {
+    const gain = Math.max(0, Math.min(1, level ?? 0.5));
     return {
       equalizer: [
         { band: 0, gain: gain * 0.6 },
