@@ -92,7 +92,7 @@ manager.on('queueEnd', (player: Player) => {
   const channel = client.channels.cache.get(player.textChannelId!);
   if (channel && 'send' in channel) {
     if (!player.autoPlay) {
-      (channel as TextChannel).send('📭 Queue finished! Add more songs or I\'ll leave in 5 minutes. (Use !autoplay to enable continuous playback)');
+      (channel as TextChannel).send('⏹️ **Player stopped!** Queue finished.\n💡 Add more songs with `!play` or enable autoplay with `!autoplay`');
     }
   }
   
@@ -101,7 +101,7 @@ manager.on('queueEnd', (player: Player) => {
       if (player.queue.tracks.length === 0 && !player.playing) {
         player.destroy(DestroyReasons.QueueEmpty);
         if (channel && 'send' in channel) {
-          (channel as TextChannel).send('👋 Left due to inactivity.');
+          (channel as TextChannel).send('👋 Left voice channel due to inactivity.');
         }
       }
     }, 5 * 60 * 1000);
