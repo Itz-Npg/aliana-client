@@ -295,6 +295,7 @@ export class Player extends EventEmitter {
     this._connected = false;
     this._playing = false;
     this._paused = false;
+    this._autoPlay = false;
     
     this.emit('destroyed', reason);
     this.removeAllListeners();
