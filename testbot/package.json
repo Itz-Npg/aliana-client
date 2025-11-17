@@ -12,7 +12,7 @@
   "author": "Aliana",
   "license": "MIT",
   "dependencies": {
-    "aliana-client": "file:..",
+    "aliana-client": "^1.0.3",
     "discord.js": "^14.14.1"
   },
   "devDependencies": {
