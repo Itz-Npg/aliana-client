@@ -20,6 +20,7 @@ export class LavalinkManager extends EventEmitter {
   private validator: Validator;
   private _clientId?: string;
   private initiated = false;
+  private playedTracksHistory: Map<string, Set<string>> = new Map();
 
   get clientId(): string | undefined {
     return this._clientId;
@@ -154,14 +155,52 @@ export class LavalinkManager extends EventEmitter {
 
   private async getRelatedTracks(track: Track): Promise<Track[]> {
     try {
-      const searchQuery = `${track.info.title} ${track.info.author}`;
-      const result = await this.search(searchQuery, track.requester, 'youtube');
+      const guildId = track.requester?.guildId || 'default';
+      
+      if (!this.playedTracksHistory.has(guildId)) {
+        this.playedTracksHistory.set(guildId, new Set());
+      }
+      const playedTracks = this.playedTracksHistory.get(guildId)!;
+      
+      playedTracks.add(track.info.identifier);
+      
+      if (playedTracks.size > 50) {
+        const tracksArray = Array.from(playedTracks);
+        playedTracks.clear();
+        tracksArray.slice(-25).forEach(id => playedTracks.add(id));
+      }
+      
+      const searchStrategies = [
+        `${track.info.author} songs`,
+        `${track.info.author} popular`,
+        `similar to ${track.info.title}`,
+        `${track.info.title.split(' ').slice(0, 3).join(' ')} type beat`,
+      ];
+      
+      const randomStrategy = searchStrategies[Math.floor(Math.random() * searchStrategies.length)];
+      const result = await this.search(randomStrategy, track.requester, 'youtube');
       
       if (result.loadType === 'search' && Array.isArray(result.data)) {
         const tracks = result.data as any as Track[];
-        return tracks.filter((t) => 
+        const filteredTracks = tracks.filter((t) => 
+          !playedTracks.has(t.info.identifier) && 
           t.info.identifier !== track.info.identifier
-        ).slice(0, 10);
+        );
+        
+        if (filteredTracks.length > 0) {
+          return filteredTracks.slice(0, 15);
+        }
+      }
+      
+      const fallbackQuery = `${track.info.author}`;
+      const fallbackResult = await this.search(fallbackQuery, track.requester, 'youtube');
+      
+      if (fallbackResult.loadType === 'search' && Array.isArray(fallbackResult.data)) {
+        const tracks = fallbackResult.data as any as Track[];
+        return tracks.filter((t) => 
+          !playedTracks.has(t.info.identifier) &&
+          t.info.identifier !== track.info.identifier
+        ).slice(0, 15);
       }
       
       return [];
@@ -221,6 +260,8 @@ export class LavalinkManager extends EventEmitter {
 
     await player.destroy(reason);
     this.players.delete(guildId);
+    
+    this.playedTracksHistory.delete(guildId);
     
     this.emit('playerDestroy', player, reason);
   }

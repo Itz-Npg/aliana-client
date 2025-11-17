@@ -1,4 +1,4 @@
-import type { FilterData, EqualizerBand } from '../types';
+import type { FilterData, EqualizerBand, ChannelMixFilter } from '../types';
 import { FILTER_PRESETS, type PresetName } from './presets';
 
 export class FilterManager {
@@ -164,6 +164,131 @@ export class FilterManager {
 
   async setVolume(volume: number): Promise<void> {
     this.filters.volume = Math.max(0, Math.min(5, volume));
+    await this.updateCallback(this.filters);
+  }
+
+  async setAudioOutput(type: 'mono' | 'stereo' | 'left' | 'right'): Promise<void> {
+    const audioOutputsData: Record<string, ChannelMixFilter> = {
+      mono: { leftToLeft: 0.5, leftToRight: 0.5, rightToLeft: 0.5, rightToRight: 0.5 },
+      stereo: { leftToLeft: 1, leftToRight: 0, rightToLeft: 0, rightToRight: 1 },
+      left: { leftToLeft: 1, leftToRight: 0, rightToLeft: 1, rightToRight: 0 },
+      right: { leftToLeft: 0, leftToRight: 1, rightToLeft: 0, rightToRight: 1 },
+    };
+    
+    if (type === 'stereo') {
+      delete this.filters.channelMix;
+    } else {
+      this.filters.channelMix = audioOutputsData[type];
+    }
+    await this.updateCallback(this.filters);
+  }
+
+  async setEcho(delay?: number, decay?: number): Promise<void> {
+    if (!delay && !decay) {
+      if (this.filters.pluginFilters) {
+        delete this.filters.pluginFilters['lavalink-filter-plugin'];
+        if (Object.keys(this.filters.pluginFilters).length === 0) {
+          delete this.filters.pluginFilters;
+        }
+      }
+    } else {
+      if (!this.filters.pluginFilters) {
+        this.filters.pluginFilters = {};
+      }
+      if (!this.filters.pluginFilters['lavalink-filter-plugin']) {
+        this.filters.pluginFilters['lavalink-filter-plugin'] = {};
+      }
+      this.filters.pluginFilters['lavalink-filter-plugin'].echo = {
+        delay: delay ?? 1,
+        decay: decay ?? 0.5
+      };
+    }
+    await this.updateCallback(this.filters);
+  }
+
+  async setReverb(delays?: number[], gains?: number[]): Promise<void> {
+    if (!delays && !gains) {
+      if (this.filters.pluginFilters?.['lavalink-filter-plugin']) {
+        delete this.filters.pluginFilters['lavalink-filter-plugin'].reverb;
+        if (Object.keys(this.filters.pluginFilters['lavalink-filter-plugin']).length === 0) {
+          delete this.filters.pluginFilters['lavalink-filter-plugin'];
+        }
+        if (Object.keys(this.filters.pluginFilters).length === 0) {
+          delete this.filters.pluginFilters;
+        }
+      }
+    } else {
+      if (!this.filters.pluginFilters) {
+        this.filters.pluginFilters = {};
+      }
+      if (!this.filters.pluginFilters['lavalink-filter-plugin']) {
+        this.filters.pluginFilters['lavalink-filter-plugin'] = {};
+      }
+      this.filters.pluginFilters['lavalink-filter-plugin'].reverb = {
+        delays: delays ?? [0.037, 0.042, 0.048, 0.053],
+        gains: gains ?? [0.84, 0.83, 0.82, 0.81]
+      };
+    }
+    await this.updateCallback(this.filters);
+  }
+
+  async setHighPass(cutoffFrequency?: number, boostFactor?: number): Promise<void> {
+    if (!cutoffFrequency && !boostFactor) {
+      if (this.filters.pluginFilters) {
+        delete this.filters.pluginFilters['high-pass'];
+        if (Object.keys(this.filters.pluginFilters).length === 0) {
+          delete this.filters.pluginFilters;
+        }
+      }
+    } else {
+      if (!this.filters.pluginFilters) {
+        this.filters.pluginFilters = {};
+      }
+      this.filters.pluginFilters['high-pass'] = {
+        cutoffFrequency: cutoffFrequency ?? 1475,
+        boostFactor: boostFactor ?? 1.0
+      };
+    }
+    await this.updateCallback(this.filters);
+  }
+
+  async setPluginLowPass(cutoffFrequency?: number, boostFactor?: number): Promise<void> {
+    if (!cutoffFrequency && !boostFactor) {
+      if (this.filters.pluginFilters) {
+        delete this.filters.pluginFilters['low-pass'];
+        if (Object.keys(this.filters.pluginFilters).length === 0) {
+          delete this.filters.pluginFilters;
+        }
+      }
+    } else {
+      if (!this.filters.pluginFilters) {
+        this.filters.pluginFilters = {};
+      }
+      this.filters.pluginFilters['low-pass'] = {
+        cutoffFrequency: cutoffFrequency ?? 284,
+        boostFactor: boostFactor ?? 1.0
+      };
+    }
+    await this.updateCallback(this.filters);
+  }
+
+  async setNormalization(maxAmplitude?: number, adaptive?: boolean): Promise<void> {
+    if (!maxAmplitude && adaptive === undefined) {
+      if (this.filters.pluginFilters) {
+        delete this.filters.pluginFilters['normalization'];
+        if (Object.keys(this.filters.pluginFilters).length === 0) {
+          delete this.filters.pluginFilters;
+        }
+      }
+    } else {
+      if (!this.filters.pluginFilters) {
+        this.filters.pluginFilters = {};
+      }
+      this.filters.pluginFilters['normalization'] = {
+        maxAmplitude: maxAmplitude ?? 0.75,
+        adaptive: adaptive ?? true
+      };
+    }
     await this.updateCallback(this.filters);
   }
 

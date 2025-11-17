@@ -39,3 +39,6 @@ outputType = "console"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd testbot && node dist/index.js"
+
+[nix]
+channel = "stable-25_05"
