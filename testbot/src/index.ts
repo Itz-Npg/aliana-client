@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Message, VoiceState, TextChannel } from 'discord.js';
-import { LavalinkManager, Player, Track, DestroyReasons } from 'aliana-client';
+import { LavalinkManager, Player, Track, DestroyReasons, Node } from 'aliana-client';
 import type { SearchResult } from 'aliana-client';
 import config from '../config.json';
 
@@ -14,7 +14,7 @@ const client = new Client({
 
 const manager = new LavalinkManager({
   nodes: config.lavalink.nodes,
-  sendPayload: (guildId, payload) => {
+  sendPayload: (guildId: string, payload: any) => {
     const guild = client.guilds.cache.get(guildId);
     if (guild) guild.shard.send(payload);
   },
@@ -42,26 +42,26 @@ client.on('voiceStateUpdate', (oldState: VoiceState, newState: VoiceState) => {
   }
 });
 
-manager.on('nodeConnect', (node) => {
+manager.on('nodeConnect', (node: Node) => {
   console.log(`✅ Node "${node.options.identifier}" connected!`);
 });
 
-manager.on('nodeError', (node, error) => {
+manager.on('nodeError', (node: Node, error: Error) => {
   console.error(`❌ Node "${node.options.identifier}" error:`, error.message);
 });
 
-manager.on('trackStart', (player, track) => {
+manager.on('trackStart', (player: Player, track: Track) => {
   const channel = client.channels.cache.get(player.textChannelId!);
   if (channel && 'send' in channel) {
     (channel as TextChannel).send(`🎵 Now playing: **${track.info.title}** by **${track.info.author}**`);
   }
 });
 
-manager.on('trackEnd', (player, track) => {
+manager.on('trackEnd', (player: Player, track: Track) => {
   console.log(`✅ Track ended: ${track.info.title}`);
 });
 
-manager.on('queueEnd', (player) => {
+manager.on('queueEnd', (player: Player) => {
   const channel = client.channels.cache.get(player.textChannelId!);
   if (channel && 'send' in channel) {
     (channel as TextChannel).send('📭 Queue finished! Add more songs or I\'ll leave in 5 minutes.');
@@ -77,7 +77,7 @@ manager.on('queueEnd', (player) => {
   }, 5 * 60 * 1000);
 });
 
-manager.on('playerDestroy', (player, reason) => {
+manager.on('playerDestroy', (player: Player, reason: string) => {
   console.log(`🗑️ Player destroyed in guild ${player.guildId}. Reason: ${reason}`);
 });
 
@@ -151,11 +151,10 @@ async function handlePlay(message: Message, args: string[]) {
       textChannelId: message.channel.id,
       selfDeaf: true,
     });
-    player.connect();
+    await player.connect();
   }
 
-  const searchQuery = query.startsWith('http') ? query : `ytsearch:${query}`;
-  const result = await manager.search(searchQuery, message.author.id);
+  const result = await manager.search(query, message.author.id, 'youtube');
 
   if (result.loadType === 'error' || result.loadType === 'empty') {
     return message.reply('❌ No results found!');
@@ -171,9 +170,7 @@ async function handlePlay(message: Message, args: string[]) {
     return message.reply('❌ No tracks found in search results!');
   }
 
-  for (const track of tracks) {
-    player.queue.add(track as any as Track);
-  }
+  await player.queue.add(tracks);
 
   if (result.loadType === 'playlist' && !Array.isArray(result.data) && result.data.info) {
     message.reply(`📋 Added **${tracks.length}** tracks from **${result.data.info.name}** to queue!`);
@@ -182,7 +179,7 @@ async function handlePlay(message: Message, args: string[]) {
   }
 
   if (!player.playing && !player.paused) {
-    player.play();
+    await player.play();
   }
 }
 
@@ -249,7 +246,7 @@ async function handleQueue(message: Message) {
 
   if (upcoming.length > 0) {
     queueText += '**Up Next:**\n';
-    upcoming.forEach((track, index) => {
+    upcoming.forEach((track: Track, index: number) => {
       queueText += `${index + 1}. ${track.info.title} - ${track.info.author}\n`;
     });
     
