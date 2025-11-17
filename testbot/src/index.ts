@@ -77,7 +77,7 @@ manager.on('trackStart', (player: Player, track: Track) => {
 });
 
 manager.on('trackEnd', (player: Player, track: Track) => {
-  console.log(`✅ Track ended: ${track.info.title}`);
+  console.log(`✅ Track ended: ${track.info.title} | AutoPlay: ${player.autoPlay}`);
 });
 
 manager.on('autoPlayTrack', (player: Player, track: Track) => {

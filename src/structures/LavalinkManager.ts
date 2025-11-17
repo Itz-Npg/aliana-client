@@ -134,11 +134,16 @@ export class LavalinkManager extends EventEmitter {
   private async handleTrackEnd(player: Player, finishedTrack: Track): Promise<void> {
     await player.queue.initialize();
     
-    const trackForAutoplay = player.lastPlayedTrack || player.queue.current || finishedTrack;
-    
     if (player.queue.size > 0) {
       await player.skip();
-    } else if (player.autoPlay && trackForAutoplay) {
+    } else if (player.autoPlay === true) {
+      const trackForAutoplay = player.lastPlayedTrack || player.queue.current || finishedTrack;
+      
+      if (!trackForAutoplay) {
+        this.emit('queueEnd', player);
+        return;
+      }
+      
       try {
         const relatedTracks = await this.getRelatedTracks(trackForAutoplay);
         if (relatedTracks.length > 0) {
