@@ -25,7 +25,9 @@
 - 🧑‍💻 **Developer-Friendly**: A memory-efficient design with a clean, intuitive API
 - 🤖 **Automated Handling**: Automatically handles track skipping on errors, voice channel deletions, server-wide mutes, and much more
 - 🎵 **Enhanced Audio Quality**: Built-in audio normalizer for consistent volume levels
-- 🌈 **Rich Filter Presets**: Bass boost, nightcore, vaporwave, 8D audio, and more
+- 🌈 **Rich Filter Presets**: Bass boost, nightcore, vaporwave, 8D audio, echo, reverb, and more
+- 🎨 **Built-in Music Cards**: Generate beautiful visual music cards with the included musicard integration
+- 🔄 **Smart Autoplay**: Intelligent track recommendations that play different, similar songs like Spotify
 
 ---
 

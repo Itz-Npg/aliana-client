@@ -4,11 +4,14 @@ A fully functional Discord music bot built to test the `aliana-client` package.
 
 ## Features
 
-This test bot demonstrates all the core features of `aliana-client`:
+This test bot demonstrates all the features of `aliana-client`:
 
 - ✅ **Music Playback** - Play songs from YouTube and other sources
 - ✅ **Queue Management** - Add, skip, and manage your music queue
-- ✅ **Audio Filters** - Apply presets like bassboost, nightcore, vaporwave, and 8D
+- ✅ **Smart Autoplay** - Intelligent track recommendations (plays different, similar songs)
+- ✅ **Audio Filters** - 10+ presets including bassboost, nightcore, vaporwave, 8D, karaoke, and more
+- ✅ **Advanced Filters** - Echo, reverb, audio output control (mono/stereo/left/right)
+- ✅ **Music Cards** - Generate beautiful visual music cards with the built-in generator
 - ✅ **Player Controls** - Pause, resume, volume control
 - ✅ **Event Handling** - Proper event listeners for all player events
 - ✅ **Voice State Management** - Automatic cleanup and reconnection
@@ -108,6 +111,7 @@ npm start
 
 ## Commands
 
+### Music Controls
 | Command | Description | Example |
 |---------|-------------|---------|
 | `!play <query>` | Play a song or add to queue | `!play never gonna give you up` |
@@ -115,21 +119,47 @@ npm start
 | `!resume` | Resume playback | `!resume` |
 | `!skip` | Skip current track | `!skip` |
 | `!stop` | Stop and clear queue | `!stop` |
-| `!queue` | Show current queue | `!queue` |
-| `!nowplaying` | Show current track info | `!nowplaying` or `!np` |
 | `!volume <0-100>` | Set volume | `!volume 50` |
-| `!filter <preset>` | Apply audio filter | `!filter bassboost` |
+| `!autoplay` | Toggle smart autoplay | `!autoplay` |
+
+### Queue Management
+| Command | Description | Example |
+|---------|-------------|---------|
+| `!queue` | Show current queue | `!queue` |
+| `!nowplaying` or `!np` | Show current track info | `!np` |
+| `!card` or `!musiccard` | Generate music card image | `!card` |
+
+### Filter Presets
+| Command | Description | Example |
+|---------|-------------|---------|
+| `!filter <preset>` | Apply audio filter preset | `!filter bassboost` |
+
+Available presets:
+- `bassboost` - Enhanced bass
+- `nightcore` - Higher pitch and tempo
+- `vaporwave` - Slowed and reverb
+- `8d` - 8D audio effect
+- `karaoke` - Remove vocals
+- `soft` - Soft sound
+- `pop` - Pop music EQ
+- `electronic` - Electronic music EQ
+- `rock` - Rock music EQ
+- `classical` - Classical music EQ
+- `clear` - Remove all filters
+
+### Advanced Filters
+| Command | Description | Example |
+|---------|-------------|---------|
+| `!echo [delay] [decay]` | Apply echo effect | `!echo 1.5 0.6` |
+| `!reverb` | Apply reverb effect | `!reverb` |
+| `!output <type>` | Set audio output | `!output mono` |
+
+Audio output types: `mono`, `stereo`, `left`, `right`
+
+### Other
+| Command | Description | Example |
+|---------|-------------|---------|
 | `!help` | Show help message | `!help` |
-
-## Audio Filters
-
-Test the filter system with these presets:
-
-- `!filter bassboost` - Enhanced bass
-- `!filter nightcore` - Higher pitch and tempo
-- `!filter vaporwave` - Slowed and reverb
-- `!filter 8d` - 8D audio effect
-- `!filter clear` - Remove all filters
 
 ## Testing Checklist
 

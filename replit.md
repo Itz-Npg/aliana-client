@@ -16,16 +16,20 @@ Aliana-client is a premium TypeScript Lavalink v4 client package designed to be 
 - Ensure type-safety with full TypeScript support
 
 ## Recent Changes
-- **2025-11-17**: ✅ **Complete Production Implementation**
+- **2025-11-17**: ✅ **Complete Production Implementation + New Features**
   - Core Lavalink v4 integration with WebSocket & REST API
   - Advanced queue system with persistence and proper initialization locking
   - Comprehensive filter system with AudioNormalizer for superior quality
+  - **Smart Autoplay**: Intelligent track recommendations that play different, similar songs
+  - **Music Card Generator**: Built-in musicard integration for visual music cards
+  - **Advanced Filters**: Echo, reverb, high-pass, low-pass, normalization, audio output control
+  - **Session Resuming**: Automatic session recovery on reconnection
   - Smart unresolved track handling with caching and error handling
   - Client & server-side validation for URLs, playlists, and tracks
   - Complete voice state integration with Discord gateway
   - All critical race conditions resolved with proper async flow
   - Full documentation with examples and API reference
-  - **Architect-approved**: All critical architectural issues resolved
+  - Test bot updated with all new features
 
 ## Project Architecture
 

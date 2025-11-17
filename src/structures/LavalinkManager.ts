@@ -12,6 +12,11 @@ import { Player } from './Player';
 import { Track } from './Track';
 import { Validator } from '../utils/Validator';
 
+interface PlayHistory {
+  queue: string[];
+  set: Set<string>;
+}
+
 export class LavalinkManager extends EventEmitter {
   public nodes: Map<string, Node> = new Map();
   public players: Map<string, Player> = new Map();
@@ -20,7 +25,7 @@ export class LavalinkManager extends EventEmitter {
   private validator: Validator;
   private _clientId?: string;
   private initiated = false;
-  private playedTracksHistory: Map<string, Set<string>> = new Map();
+  private playedTracksHistory: Map<string, PlayHistory> = new Map();
 
   get clientId(): string | undefined {
     return this._clientId;
@@ -137,7 +142,7 @@ export class LavalinkManager extends EventEmitter {
       try {
         const relatedTracks = await this.getRelatedTracks(trackForAutoplay);
         if (relatedTracks.length > 0) {
-          const randomTrack = relatedTracks[Math.floor(Math.random() * Math.min(5, relatedTracks.length))];
+          const randomTrack = relatedTracks[Math.floor(Math.random() * relatedTracks.length)];
           await player.queue.add(randomTrack);
           await player.skip();
           this.emit('autoPlayTrack', player, randomTrack);
@@ -158,17 +163,19 @@ export class LavalinkManager extends EventEmitter {
       const guildId = track.requester?.guildId || 'default';
       
       if (!this.playedTracksHistory.has(guildId)) {
-        this.playedTracksHistory.set(guildId, new Set());
+        this.playedTracksHistory.set(guildId, { queue: [], set: new Set() });
       }
-      const playedTracks = this.playedTracksHistory.get(guildId)!;
+      const history = this.playedTracksHistory.get(guildId)!;
       
-      playedTracks.add(track.info.identifier);
+      history.queue.push(track.info.identifier);
+      history.set.add(track.info.identifier);
       
-      if (playedTracks.size > 50) {
-        const tracksArray = Array.from(playedTracks);
-        playedTracks.clear();
-        tracksArray.slice(-25).forEach(id => playedTracks.add(id));
+      if (history.queue.length > 50) {
+        const removed = history.queue.shift()!;
+        history.set.delete(removed);
       }
+      
+      const last25Tracks = new Set(history.queue.slice(-25));
       
       const searchStrategies = [
         `${track.info.author} songs`,
@@ -177,33 +184,51 @@ export class LavalinkManager extends EventEmitter {
         `${track.info.title.split(' ').slice(0, 3).join(' ')} type beat`,
       ];
       
-      const randomStrategy = searchStrategies[Math.floor(Math.random() * searchStrategies.length)];
-      const result = await this.search(randomStrategy, track.requester, 'youtube');
+      const allCandidates: Track[] = [];
+      const seenIdentifiers = new Set<string>();
       
-      if (result.loadType === 'search' && Array.isArray(result.data)) {
-        const tracks = result.data as any as Track[];
-        const filteredTracks = tracks.filter((t) => 
-          !playedTracks.has(t.info.identifier) && 
-          t.info.identifier !== track.info.identifier
-        );
-        
-        if (filteredTracks.length > 0) {
-          return filteredTracks.slice(0, 15);
+      for (const strategy of searchStrategies) {
+        try {
+          const result = await this.search(strategy, track.requester, 'youtube');
+          
+          if (result.loadType === 'search' && Array.isArray(result.data)) {
+            const tracks = result.data as any as Track[];
+            
+            for (const t of tracks) {
+              if (
+                !seenIdentifiers.has(t.info.identifier) &&
+                !last25Tracks.has(t.info.identifier) &&
+                t.info.identifier !== track.info.identifier
+              ) {
+                seenIdentifiers.add(t.info.identifier);
+                allCandidates.push(t);
+              }
+              
+              if (allCandidates.length >= 15) break;
+            }
+          }
+          
+          if (allCandidates.length >= 15) break;
+        } catch (error) {
+          console.warn(`Search strategy "${strategy}" failed:`, error);
+          continue;
         }
       }
       
-      const fallbackQuery = `${track.info.author}`;
-      const fallbackResult = await this.search(fallbackQuery, track.requester, 'youtube');
-      
-      if (fallbackResult.loadType === 'search' && Array.isArray(fallbackResult.data)) {
-        const tracks = fallbackResult.data as any as Track[];
-        return tracks.filter((t) => 
-          !playedTracks.has(t.info.identifier) &&
-          t.info.identifier !== track.info.identifier
-        ).slice(0, 15);
+      if (allCandidates.length === 0) {
+        const fallbackQuery = `${track.info.author}`;
+        const fallbackResult = await this.search(fallbackQuery, track.requester, 'youtube');
+        
+        if (fallbackResult.loadType === 'search' && Array.isArray(fallbackResult.data)) {
+          const tracks = fallbackResult.data as any as Track[];
+          return tracks.filter((t) => 
+            !last25Tracks.has(t.info.identifier) &&
+            t.info.identifier !== track.info.identifier
+          ).slice(0, 15);
+        }
       }
       
-      return [];
+      return allCandidates;
     } catch (error) {
       console.error('Failed to get related tracks:', error);
       return [];

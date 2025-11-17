@@ -9,6 +9,7 @@ export interface NodeOptions {
   requestTimeout?: number;
   resumeKey?: string;
   resumeTimeout?: number;
+  sessionId?: string;
   regions?: string[];
 }
 

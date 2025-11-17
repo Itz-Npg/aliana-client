@@ -1,5 +1,5 @@
-import { Client, GatewayIntentBits, Message, VoiceState, TextChannel } from 'discord.js';
-import { LavalinkManager, Player, Track, DestroyReasons, Node } from 'aliana-client';
+import { Client, GatewayIntentBits, Message, VoiceState, TextChannel, AttachmentBuilder } from 'discord.js';
+import { LavalinkManager, Player, Track, DestroyReasons, Node, MusicCardGenerator } from 'aliana-client';
 import type { SearchResult } from 'aliana-client';
 import config from '../config.json';
 
@@ -149,6 +149,20 @@ client.on('messageCreate', async (message: Message) => {
         break;
       case 'filter':
         await handleFilter(message, args);
+        break;
+      case 'echo':
+        await handleEcho(message, args);
+        break;
+      case 'reverb':
+        await handleReverb(message);
+        break;
+      case 'audiooutput':
+      case 'output':
+        await handleAudioOutput(message, args);
+        break;
+      case 'musiccard':
+      case 'card':
+        await handleMusicCard(message, args);
         break;
       case 'autoplay':
         await handleAutoPlay(message);
@@ -354,15 +368,19 @@ async function handleFilter(message: Message, args: string[]) {
   
   if (!filterName) {
     return message.reply(
-      '🎛️ **Available Filters:**\n' +
-      '`bassboost`, `nightcore`, `vaporwave`, `8d`, `clear`\n\n' +
+      '🎛️ **Available Filter Presets:**\n' +
+      '`bassboost`, `nightcore`, `vaporwave`, `8d`, `karaoke`, `soft`, `pop`, `electronic`, `rock`, `classical`, `clear`\n\n' +
+      '**Additional Filters:**\n' +
+      `\`${config.prefix}echo [delay] [decay]\` - Echo effect\n` +
+      `\`${config.prefix}reverb\` - Reverb effect\n` +
+      `\`${config.prefix}output <mono|stereo|left|right>\` - Audio output\n\n` +
       `Usage: ${config.prefix}filter <preset>`
     );
   }
 
   if (filterName === 'clear') {
-    player.filters.clearFilters();
-    return message.reply('🔄 Filters cleared!');
+    await player.filters.clearFilters();
+    return message.reply('🔄 All filters cleared!');
   }
 
   const filterMap: Record<string, string> = {
@@ -370,14 +388,128 @@ async function handleFilter(message: Message, args: string[]) {
     'nightcore': 'nightcore',
     'vaporwave': 'vaporwave',
     '8d': 'eightD',
+    'karaoke': 'karaoke',
+    'soft': 'soft',
+    'pop': 'pop',
+    'electronic': 'electronic',
+    'rock': 'rock',
+    'classical': 'classical',
   };
 
   if (!filterMap[filterName]) {
-    return message.reply('❌ Invalid filter! Use: bassboost, nightcore, vaporwave, 8d, or clear');
+    return message.reply('❌ Invalid filter! Check available filters with `!filter`');
   }
 
-  player.filters.setPreset(filterMap[filterName] as any);
+  await player.filters.setPreset(filterMap[filterName] as any);
   message.reply(`🎛️ Applied **${filterName}** filter!`);
+}
+
+async function handleEcho(message: Message, args: string[]) {
+  const player = manager.players.get(message.guild!.id);
+  if (!player) return message.reply('❌ Nothing is playing!');
+
+  if (!message.member?.voice.channel) {
+    return message.reply('❌ You need to be in the voice channel!');
+  }
+
+  const delay = parseFloat(args[0]) || 1.0;
+  const decay = parseFloat(args[1]) || 0.5;
+
+  if (delay === 0 && decay === 0) {
+    await player.filters.setEcho();
+    return message.reply('❌ Echo effect disabled!');
+  }
+
+  await player.filters.setEcho(delay, decay);
+  message.reply(`🔊 Echo effect applied! (Delay: ${delay}s, Decay: ${decay})`);
+}
+
+async function handleReverb(message: Message) {
+  const player = manager.players.get(message.guild!.id);
+  if (!player) return message.reply('❌ Nothing is playing!');
+
+  if (!message.member?.voice.channel) {
+    return message.reply('❌ You need to be in the voice channel!');
+  }
+
+  await player.filters.setReverb();
+  message.reply('🎵 Reverb effect applied!');
+}
+
+async function handleAudioOutput(message: Message, args: string[]) {
+  const player = manager.players.get(message.guild!.id);
+  if (!player) return message.reply('❌ Nothing is playing!');
+
+  if (!message.member?.voice.channel) {
+    return message.reply('❌ You need to be in the voice channel!');
+  }
+
+  const type = args[0]?.toLowerCase() as 'mono' | 'stereo' | 'left' | 'right';
+  
+  if (!type || !['mono', 'stereo', 'left', 'right'].includes(type)) {
+    return message.reply(
+      '🔊 **Audio Output Options:**\n' +
+      '`mono` - Mono output\n' +
+      '`stereo` - Stereo output (default)\n' +
+      '`left` - Left channel only\n' +
+      '`right` - Right channel only\n\n' +
+      `Usage: ${config.prefix}output <type>`
+    );
+  }
+
+  await player.filters.setAudioOutput(type);
+  message.reply(`🔊 Audio output set to **${type}**!`);
+}
+
+async function handleMusicCard(message: Message, args: string[]) {
+  const player = manager.players.get(message.guild!.id);
+  if (!player) return message.reply('❌ Nothing is playing!');
+
+  const current = player.queue.current;
+  if (!current) return message.reply('❌ No track is currently playing!');
+
+  try {
+    const theme = (args[0] as 'classic' | 'classicPro' | 'dynamic') || 'dynamic';
+    const validThemes = ['classic', 'classicPro', 'dynamic'];
+    
+    if (args[0] && !validThemes.includes(args[0])) {
+      return message.reply(
+        `❌ Invalid theme! Available themes:\n` +
+        `• \`classic\` - Simple classic design\n` +
+        `• \`classicPro\` - Enhanced classic with more details\n` +
+        `• \`dynamic\` - Modern animated design (default)\n\n` +
+        `Usage: ${config.prefix}card [theme]`
+      );
+    }
+
+    const statusMsg = await message.reply('🎨 Generating music card...');
+    
+    const card = await MusicCardGenerator.generateCardWithProgress(
+      current,
+      player.position,
+      {
+        backgroundColor: theme === 'dynamic' ? '#070707' : '#1a1a1a',
+        progressColor: '#1DB954',
+        progressBarColor: theme === 'dynamic' ? '#2c2f33' : '#404040',
+        nameColor: '#ffffff',
+        authorColor: '#99aab5',
+        timeColor: '#1DB954',
+      },
+      theme
+    );
+
+    const attachment = new AttachmentBuilder(card, { name: `musicard-${theme}.png` });
+    await statusMsg.edit({
+      content: `🎨 **Music Card Generated!**\n` +
+        `📀 **${current.info.title}**\n` +
+        `🎤 ${current.info.author}\n` +
+        `🎭 Theme: **${theme}**`,
+      files: [attachment],
+    });
+  } catch (error: any) {
+    console.error('Music card generation error:', error);
+    message.reply(`❌ Failed to generate music card: ${error.message}`);
+  }
 }
 
 async function handleAutoPlay(message: Message) {
@@ -408,21 +540,31 @@ async function handleHelp(message: Message) {
 \`${config.prefix}skip\` - Skip current track
 \`${config.prefix}stop\` - Stop and clear queue
 \`${config.prefix}volume <0-100>\` - Set volume
-\`${config.prefix}autoplay\` - Toggle autoplay (Spotify-like)
+\`${config.prefix}autoplay\` - Toggle autoplay (plays similar songs)
 
 **Queue:**
 \`${config.prefix}queue\` - Show current queue
 \`${config.prefix}nowplaying\` or \`${config.prefix}np\` - Show current track
+\`${config.prefix}card [theme]\` - Generate music card (themes: classic, classicPro, dynamic)
 
-**Filters:**
-\`${config.prefix}filter <preset>\` - Apply audio filter
-Available presets: bassboost, nightcore, vaporwave, 8d, clear
+**Filter Presets:**
+\`${config.prefix}filter <preset>\` - Apply filter preset
+Presets: bassboost, nightcore, vaporwave, 8d, karaoke, soft, pop, electronic, rock, classical, clear
+
+**Advanced Filters:**
+\`${config.prefix}echo [delay] [decay]\` - Echo effect
+\`${config.prefix}reverb\` - Reverb effect
+\`${config.prefix}output <type>\` - Audio output (mono/stereo/left/right)
 
 **Other:**
 \`${config.prefix}help\` - Show this message
 
-**Testing Your Package:**
-This bot uses the aliana-client package to test all its features!
+**✨ New Features:**
+• Smart autoplay with varied recommendations (tracks last 50 plays, avoids last 25)
+• Echo & reverb filters (requires Lavalink plugins)
+• High-pass, low-pass & normalization filters (requires LavaDSPX plugin)
+• Audio output control (mono/stereo/left/right channel mixing)
+• Built-in music card generator with 3 themes and real-time progress
   `;
   
   message.reply(helpText);

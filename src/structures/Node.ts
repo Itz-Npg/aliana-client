@@ -2,8 +2,9 @@ import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import type { NodeOptions, NodeStats, LavalinkNodeInfo } from '../types';
 
-interface ProcessedNodeOptions extends Omit<Required<NodeOptions>, 'resumeKey'> {
+interface ProcessedNodeOptions extends Omit<Required<NodeOptions>, 'resumeKey' | 'sessionId'> {
   resumeKey?: string;
+  sessionId?: string;
 }
 
 export class Node extends EventEmitter {
@@ -17,6 +18,7 @@ export class Node extends EventEmitter {
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private reconnectAttempts = 0;
   private connected = false;
+  private clientId: string | null = null;
 
   constructor(options: NodeOptions) {
     super();
@@ -33,8 +35,13 @@ export class Node extends EventEmitter {
       requestTimeout: options.requestTimeout ?? 10000,
       resumeKey: options.resumeKey,
       resumeTimeout: options.resumeTimeout ?? 60,
+      sessionId: options.sessionId,
       regions: options.regions || [],
     };
+    
+    if (options.sessionId) {
+      this.sessionId = options.sessionId;
+    }
   }
 
   get isConnected(): boolean {
@@ -58,14 +65,17 @@ export class Node extends EventEmitter {
   async connect(clientId: string, resumeKey?: string): Promise<void> {
     if (this.isConnected) return;
 
+    this.clientId = clientId;
+
     const headers: Record<string, string> = {
       'Authorization': this.options.password,
       'User-Id': clientId,
       'Client-Name': 'Aliana-client/1.0.0',
     };
 
-    if (resumeKey || this.options.resumeKey) {
-      headers['Session-Id'] = resumeKey || this.options.resumeKey!;
+    const sessionKey = resumeKey || this.options.resumeKey;
+    if (sessionKey && this.sessionId) {
+      headers['Session-Id'] = this.sessionId;
     }
 
     this.ws = new WebSocket(this.wsAddress, { headers });
@@ -82,14 +92,6 @@ export class Node extends EventEmitter {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-    
-    if (this.options.resumeKey && this.sessionId) {
-      try {
-        await this.configureResuming();
-      } catch (error) {
-        console.error('Failed to configure session resuming:', error);
-      }
     }
     
     this.emit('connect');
@@ -122,6 +124,15 @@ export class Node extends EventEmitter {
           this.sessionId = payload.sessionId || null;
           this.info = null;
           await this.fetchInfo();
+          
+          if (this.options.resumeKey && this.sessionId && payload.resumed === false) {
+            try {
+              await this.configureResuming();
+            } catch (error) {
+              console.error('Failed to configure session resuming:', error);
+            }
+          }
+          
           this.emit('ready', payload);
           break;
         case 'stats':
@@ -146,13 +157,25 @@ export class Node extends EventEmitter {
 
   private onClose(_code: number, reason: Buffer): void {
     this.connected = false;
-    this.emit('disconnect', reason.toString() || 'Unknown reason');
+    const reasonStr = reason.toString() || 'Unknown reason';
+    this.emit('disconnect', reasonStr);
 
     if (this.reconnectAttempts < this.options.retryAmount) {
       this.reconnectAttempts++;
-      this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = setTimeout(async () => {
         this.emit('reconnecting');
+        try {
+          if (!this.clientId) {
+            console.error('Cannot reconnect: clientId not stored');
+            return;
+          }
+          await this.connect(this.clientId, this.options.resumeKey);
+        } catch (error) {
+          console.error('Reconnection failed:', error);
+        }
       }, this.options.retryDelay);
+    } else {
+      console.warn(`Node ${this.identifier} failed to reconnect after ${this.options.retryAmount} attempts`);
     }
   }
 
