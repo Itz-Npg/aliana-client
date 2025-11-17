@@ -112,12 +112,58 @@ await player.filters.setNightcore(true);
 // Apply 8D audio effect
 await player.filters.set8D(true);
 
+// Echo & Reverb (requires lavalink-filter-plugin)
+await player.filters.setEcho(1, 0.5);
+await player.filters.setReverb();
+
+// High-pass, Low-pass, Normalization (requires LavaDSPX plugin)
+await player.filters.setHighPass(100, 1.2);
+await player.filters.setNormalization(0.75);
+
+// Audio output control
+await player.filters.setAudioOutput('mono'); // mono, stereo, left, right
+
 // Custom equalizer
 await player.filters.setEqualizer([
   { band: 0, gain: 0.2 },
   { band: 1, gain: 0.15 },
 ]);
 ```
+
+---
+
+## 🎨 Music Card Generator
+
+Generate beautiful visual music cards with real-time playback progress:
+
+```typescript
+import { MusicCardGenerator } from 'aliana-client';
+
+// Generate card with current progress
+const card = await MusicCardGenerator.generateCardWithProgress(
+  player.queue.current,  // Current track
+  player.position,        // Current position in milliseconds
+  {
+    backgroundColor: '#070707',
+    progressColor: '#1DB954',
+    nameColor: '#ffffff',
+    authorColor: '#99aab5',
+  },
+  'dynamic' // Theme: 'classic', 'classicPro', or 'dynamic'
+);
+
+// Send to Discord
+await channel.send({ 
+  files: [{ attachment: card, name: 'now-playing.png' }] 
+});
+```
+
+**Features:**
+- 🎭 Three beautiful themes (classic, classicPro, dynamic)
+- 📊 Real-time progress bar
+- 🎨 Customizable colors
+- 🖼️ High-quality PNG output
+- ⚡ Fast generation (~100ms)
 
 ---
 
