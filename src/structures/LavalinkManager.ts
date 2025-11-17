@@ -345,7 +345,7 @@ export class LavalinkManager extends EventEmitter {
     const searchSource = source || this.options.defaultSearchPlatform || 'youtube';
     let searchQuery = query;
 
-    if (!query.startsWith('http')) {
+    if (!query.startsWith('http') && !query.startsWith('jssearch:') && !query.startsWith('jsrec:')) {
       const sourceMap: Record<string, string> = {
         youtube: 'ytsearch',
         youtubemusic: 'ytmsearch',
@@ -354,9 +354,10 @@ export class LavalinkManager extends EventEmitter {
         deezer: 'dzsearch',
         applemusic: 'amsearch',
         yandex: 'ymsearch',
+        jiosaavn: 'jssearch',
       };
       searchQuery = `${sourceMap[searchSource]}:${query}`;
-    } else {
+    } else if (query.startsWith('http')) {
       const validation = this.validator.validateUrl(query);
       if (!validation.valid) {
         throw new Error(`URL validation failed: ${validation.reason}`);

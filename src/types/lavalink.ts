@@ -46,7 +46,7 @@ export interface DefaultPlayerOptions {
   audioNormalizer?: boolean;
 }
 
-export type SearchPlatform = 'youtube' | 'youtubemusic' | 'soundcloud' | 'spotify' | 'deezer' | 'applemusic' | 'yandex';
+export type SearchPlatform = 'youtube' | 'youtubemusic' | 'soundcloud' | 'spotify' | 'deezer' | 'applemusic' | 'yandex' | 'jiosaavn';
 
 export interface Track {
   encoded: string;
