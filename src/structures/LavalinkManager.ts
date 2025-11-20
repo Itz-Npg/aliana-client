@@ -345,7 +345,11 @@ export class LavalinkManager extends EventEmitter {
     const searchSource = source || this.options.defaultSearchPlatform || 'youtube';
     let searchQuery = query;
 
-    if (!query.startsWith('http') && !query.startsWith('jssearch:') && !query.startsWith('jsrec:')) {
+    const isUrl = /^https?:\/\//i.test(query);
+    const searchPrefixes = ['ytsearch:', 'ytmsearch:', 'scsearch:', 'spsearch:', 'dzsearch:', 'amsearch:', 'ymsearch:', 'jssearch:', 'jsrec:', 'sprec:'];
+    const hasSearchPrefix = searchPrefixes.some(prefix => query.toLowerCase().startsWith(prefix.toLowerCase()));
+
+    if (!isUrl && !hasSearchPrefix) {
       const sourceMap: Record<string, string> = {
         youtube: 'ytsearch',
         youtubemusic: 'ytmsearch',
@@ -356,11 +360,9 @@ export class LavalinkManager extends EventEmitter {
         yandex: 'ymsearch',
         jiosaavn: 'jssearch',
       };
-      searchQuery = `${sourceMap[searchSource]}:${query}`;
-    } else if (query.startsWith('http')) {
-      const validation = this.validator.validateUrl(query);
-      if (!validation.valid) {
-        throw new Error(`URL validation failed: ${validation.reason}`);
+      const prefix = sourceMap[searchSource];
+      if (prefix) {
+        searchQuery = `${prefix}:${query}`;
       }
     }
 
