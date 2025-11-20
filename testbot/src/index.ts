@@ -235,7 +235,7 @@ async function handlePlay(message: Message, args: string[]) {
     await player.connect();
   }
 
-  const result = await manager.search(query, message.author.id, 'youtube');
+  const result = await manager.search(query, message.author.id);
 
   if (result.loadType === 'error' || result.loadType === 'empty') {
     return message.reply('❌ No results found!');
