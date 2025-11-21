@@ -66,9 +66,6 @@ client.on('raw', (d) => {
   if (d.t === 'VOICE_STATE_UPDATE') {
     manager.updateVoiceState(d.d);
   }
-  if (d.t === 'VOICE_SERVER_UPDATE') {
-    manager.updateVoiceServer(d.d);
-  }
 });
 
 // Initialize manager when bot is ready
