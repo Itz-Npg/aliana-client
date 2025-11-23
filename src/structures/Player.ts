@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
-import type { 
-  PlayerOptions, 
-  ConnectOptions, 
-  PlayOptions, 
-  VoiceState, 
+import type {
+  PlayerOptions,
+  ConnectOptions,
+  PlayOptions,
+  VoiceState,
   FilterData,
-  QueueStore 
+  QueueStore
 } from '../types';
 import { DestroyReasons } from '../types';
 import { Queue } from './Queue';
@@ -22,7 +22,7 @@ export class Player extends EventEmitter {
   public node: Node;
   public queue: Queue;
   public filters: FilterManager;
-  
+
   private normalizer: AudioNormalizer;
   private _volume: number = 100;
   private _paused: boolean = false;
@@ -37,10 +37,10 @@ export class Player extends EventEmitter {
   private sendPayload: (guildId: string, payload: any) => void;
   private selfDeaf: boolean;
   private selfMute: boolean;
-  
+
   constructor(options: PlayerOptions, node: Node, sendPayload: (guildId: string, payload: any) => void, store?: QueueStore) {
     super();
-    
+
     this.guildId = options.guildId;
     this.voiceChannelId = options.voiceChannelId;
     this.textChannelId = options.textChannelId;
@@ -48,21 +48,22 @@ export class Player extends EventEmitter {
     this.sendPayload = sendPayload;
     this.selfDeaf = options.selfDeaf ?? true;
     this.selfMute = options.selfMute ?? false;
-    
+
     const queueStore = store || new MemoryStore();
     this.queue = new Queue(this.guildId, queueStore);
-    
+    this.queue.setPlayer(this);  // Link queue to player
+
     this.normalizer = new AudioNormalizer(
       options.audioNormalizer ?? true,
       1.0
     );
-    
+
     this.filters = new FilterManager(this.updateFilters.bind(this));
-    
+
     if (options.volume !== undefined) {
       this._volume = options.volume;
     }
-    
+
     this.queue.initialize().catch(err => {
       console.error(`Failed to initialize queue for ${this.guildId}:`, err);
     });
@@ -123,14 +124,14 @@ export class Player extends EventEmitter {
     if (!this.voiceChannelId) {
       throw new Error('Cannot connect: voiceChannelId is not set');
     }
-    
+
     if (!this.sendPayload) {
       throw new Error('Cannot connect: sendPayload callback is not configured');
     }
-    
+
     const selfDeaf = options.deaf ?? this.selfDeaf;
     const selfMute = options.mute ?? this.selfMute;
-    
+
     this.sendPayload(this.guildId, {
       op: 4,
       d: {
@@ -140,23 +141,23 @@ export class Player extends EventEmitter {
         self_deaf: selfDeaf,
       },
     });
-    
+
     this.voiceState = {
       sessionId: undefined,
       event: undefined,
     };
-    
+
     this.emit('connectionUpdate', 'CONNECTING');
     this._connected = true;
   }
-  
+
   async waitForQueueReady(): Promise<void> {
     await this.queue.initialize();
   }
 
   setVoiceState(data: Partial<VoiceState>): void {
     this.voiceState = { ...this.voiceState, ...data };
-    
+
     if (this.voiceState.sessionId && this.voiceState.event) {
       this.sendVoiceUpdate();
     }
@@ -164,7 +165,7 @@ export class Player extends EventEmitter {
 
   private async sendVoiceUpdate(): Promise<void> {
     if (!this.voiceState.sessionId || !this.voiceState.event) return;
-    
+
     await this.node.updatePlayer({
       guildId: this.guildId,
       playerOptions: {
@@ -179,7 +180,7 @@ export class Player extends EventEmitter {
 
   async play(options: PlayOptions = {}): Promise<void> {
     await this.queue.initialize();
-    
+
     if (!this.queue.current && this.queue.size === 0) {
       throw new Error('Queue is empty');
     }
@@ -221,7 +222,10 @@ export class Player extends EventEmitter {
         track: { encoded: null as any },
       },
     });
-    
+
+    // Clear the current track from queue to prevent it from replaying
+    await this.queue.setCurrent(null);
+
     this._playing = false;
     this._paused = false;
     this._position = 0;
@@ -234,7 +238,7 @@ export class Player extends EventEmitter {
         paused: pause,
       },
     });
-    
+
     this._paused = pause;
   }
 
@@ -253,20 +257,20 @@ export class Player extends EventEmitter {
         position: Math.max(0, position),
       },
     });
-    
+
     this._position = position;
   }
 
   async setVolume(volume: number): Promise<void> {
     this._volume = Math.max(0, Math.min(1000, volume));
     const normalizedVolume = this.normalizer.normalize(this._volume);
-    
+
     await this.filters.setVolume(normalizedVolume / 100);
   }
 
   private async updateFilters(filters: FilterData): Promise<void> {
     const normalizedFilters = this.normalizer.applyNormalization(
-      filters, 
+      filters,
       this._volume
     );
 
@@ -282,12 +286,12 @@ export class Player extends EventEmitter {
     await this.queue.initialize();
     await this.stop();
     const nextTrack = await this.queue.next();
-    
+
     if (nextTrack) {
       await this.play();
       return nextTrack;
     }
-    
+
     return null;
   }
 
@@ -308,7 +312,7 @@ export class Player extends EventEmitter {
     this._playing = false;
     this._paused = false;
     this._autoPlay = false;
-    
+
     this.emit('destroyed', reason);
     this.removeAllListeners();
   }

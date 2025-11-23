@@ -29,13 +29,13 @@ client.on('ready', () => {
   console.log(`📝 Prefix: ${config.prefix}`);
   console.log(`💡 Try: ${config.prefix}play <song name>`);
   console.log(`⚡ Fast Track Fetcher: Enabled with 10-minute cache`);
-  
+
   const popularTracks = [
     'Trending Songs 2024',
     'Bollywood Top 10',
     'Punjabi Hits',
   ];
-  
+
   fetcher.preloadTracks(popularTracks).then(() => {
     console.log('✅ Pre-loaded popular tracks for instant playback!');
   });
@@ -108,7 +108,7 @@ manager.on('queueEnd', (player: Player) => {
       (channel as TextChannel).send('⏹️ **Player stopped!** Queue finished.\n💡 Add more songs with `!play` or enable autoplay with `!autoplay`');
     }
   }
-  
+
   if (!player.autoPlay) {
     setTimeout(() => {
       if (player.queue.tracks.length === 0 && !player.playing) {
@@ -224,7 +224,7 @@ async function handlePlay(message: Message, args: string[]) {
   }
 
   let player = manager.players.get(message.guild!.id);
-  
+
   if (!player) {
     player = manager.createPlayer({
       guildId: message.guild!.id,
@@ -241,11 +241,11 @@ async function handlePlay(message: Message, args: string[]) {
     return message.reply('❌ No results found!');
   }
 
-  const tracks = Array.isArray(result.data) 
-    ? result.data 
-    : result.data && 'tracks' in result.data 
-    ? result.data.tracks 
-    : [];
+  const tracks = Array.isArray(result.data)
+    ? result.data
+    : result.data && 'tracks' in result.data
+      ? result.data.tracks
+      : [];
 
   if (tracks.length === 0) {
     return message.reply('❌ No tracks found in search results!');
@@ -263,7 +263,7 @@ async function handlePlay(message: Message, args: string[]) {
 
   console.log(`Player state - playing: ${player.playing}, paused: ${player.paused}, connected: ${player.connected}`);
   console.log(`Queue state - current: ${player.queue.current?.info.title || 'none'}, size: ${player.queue.size}`);
-  
+
   if (!player.playing && !player.paused) {
     console.log('Attempting to start playback...');
     try {
@@ -296,7 +296,9 @@ async function handleStop(message: Message) {
     return message.reply('❌ You need to be in the voice channel!');
   }
 
-  player.destroy(DestroyReasons.Cleanup);
+  // Stop playback and clear queue, but keep player connected
+  await player.stop();
+  await player.queue.clear();
   message.reply('⏹️ Stopped and cleared the queue!');
 }
 
@@ -332,7 +334,7 @@ async function handleQueue(message: Message) {
   const upcoming = player.queue.tracks.slice(0, 10);
 
   let queueText = '📋 **Current Queue**\n\n';
-  
+
   if (current) {
     queueText += `🎵 **Now Playing:**\n${current.info.title} - ${current.info.author}\n\n`;
   }
@@ -342,7 +344,7 @@ async function handleQueue(message: Message) {
     upcoming.forEach((track: Track, index: number) => {
       queueText += `${index + 1}. ${track.info.title} - ${track.info.author}\n`;
     });
-    
+
     if (player.queue.tracks.length > 10) {
       queueText += `\n...and ${player.queue.tracks.length - 10} more tracks`;
     }
@@ -398,7 +400,7 @@ async function handleFilter(message: Message, args: string[]) {
   }
 
   const filterName = args[0]?.toLowerCase();
-  
+
   if (!filterName) {
     return message.reply(
       '🎛️ **Available Filter Presets:**\n' +
@@ -478,7 +480,7 @@ async function handleAudioOutput(message: Message, args: string[]) {
   }
 
   const type = args[0]?.toLowerCase() as 'mono' | 'stereo' | 'left' | 'right';
-  
+
   if (!type || !['mono', 'stereo', 'left', 'right'].includes(type)) {
     return message.reply(
       '🔊 **Audio Output Options:**\n' +
@@ -504,7 +506,7 @@ async function handleMusicCard(message: Message, args: string[]) {
   try {
     const theme = (args[0] as 'classic' | 'classicPro' | 'dynamic') || 'dynamic';
     const validThemes = ['classic', 'classicPro', 'dynamic'];
-    
+
     if (args[0] && !validThemes.includes(args[0])) {
       return message.reply(
         `❌ Invalid theme! Available themes:\n` +
@@ -516,7 +518,7 @@ async function handleMusicCard(message: Message, args: string[]) {
     }
 
     const statusMsg = await message.reply('🎨 Generating music card...');
-    
+
     const card = await MusicCardGenerator.generateCardWithProgress(
       current,
       player.position,
@@ -554,7 +556,7 @@ async function handleAutoPlay(message: Message) {
   }
 
   player.setAutoPlay(!player.autoPlay);
-  
+
   if (player.autoPlay) {
     message.reply('✅ **AutoPlay enabled!** 🎵\nI will automatically play related YouTube tracks when the queue ends, just like Spotify!');
   } else {
@@ -621,7 +623,7 @@ async function handleSearch(message: Message, args: string[]) {
     const trackList = tracks
       .map((t, i) => `${i + 1}. **${t.info.title}** by ${t.info.author}`)
       .join('\n');
-    
+
     message.reply(
       `🔍 **Search Results** (${timeTaken}ms):\n${trackList}\n\n` +
       `Use \`!play ${query}\` to play the first result!`
@@ -665,7 +667,7 @@ async function handleBatch(message: Message, args: string[]) {
   const statusMsg = await message.reply(`⏳ Batch fetching ${songs.length} tracks...`);
 
   const startTime = Date.now();
-  const results = await fetcher.batchFetch(songs, { 
+  const results = await fetcher.batchFetch(songs, {
     useCache: true,
     source: 'youtube',
   });
@@ -700,9 +702,9 @@ async function handlePreload(message: Message, args: string[]) {
       'Punjabi Music',
       'Arijit Singh Best',
     ];
-    
+
     const statusMsg = await message.reply('⏳ Pre-loading popular tracks...');
-    
+
     const startTime = Date.now();
     await fetcher.preloadTracks(defaultTracks, {
       source: 'youtubemusic',
@@ -741,7 +743,7 @@ async function handlePreload(message: Message, args: string[]) {
 async function handleStats(message: Message) {
   const stats = fetcher.getCacheStats();
   const hitRate = (stats.hitRate * 100).toFixed(1);
-  
+
   message.reply(
     `📊 **Fast Fetcher Cache Stats**\n` +
     `━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -860,7 +862,7 @@ Presets: bassboost, nightcore, vaporwave, 8d, karaoke, soft, pop, electronic, ro
 • Batch processing for multiple tracks
 • Pre-loading for instant playback
   `;
-  
+
   message.reply(helpText);
 }
 

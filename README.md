@@ -19,6 +19,18 @@ A premium TypeScript Lavalink v4 client library for building powerful Discord mu
 - 📦 **TypeScript** - Full type safety and IntelliSense support
 - 🚀 **High Performance** - Optimized for speed and low memory usage
 
+## 📝 Recent Updates
+
+### v1.0.7 (Latest)
+**Bug Fixes:**
+- 🐛 Fixed `Queue.clear()` not clearing the current track, which caused paused songs to persist in storage
+- 🔧 Fixed `Player.stop()` not clearing queue state properly
+- ⚡ Improved player state management to prevent stale queue data
+- 🔗 Added `queue.setPlayer()` integration for better state synchronization
+
+**What Changed:**
+Previously, when using `player.destroy()` or stopping playback, the queue's current track wasn't properly cleared from persistent storage. This could cause the wrong song to play after reconnecting. The fixes ensure clean state management.
+
 ## 📦 Installation
 
 ```bash

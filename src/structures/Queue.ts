@@ -12,47 +12,47 @@ export class Queue extends EventEmitter {
   private initialized: boolean = false;
   private modified: boolean = false;
   private player: any;
-  
+
   constructor(guildId: string, store: QueueStore) {
     super();
     this.guildId = guildId;
     this.store = store;
   }
-  
+
   setPlayer(player: any): void {
     this.player = player;
   }
-  
+
   async initialize(): Promise<void> {
     if (this.initPromise) {
       return this.initPromise;
     }
-    
+
     if (this.initialized) {
       return;
     }
-    
+
     this.initPromise = this.performLoad();
     return this.initPromise;
   }
-  
+
   private async performLoad(): Promise<void> {
     try {
       if (this.modified) {
         return;
       }
-      
+
       await this.load();
       this.initialized = true;
     } catch (error) {
       console.error(`Failed to load queue for guild ${this.guildId}:`, error);
     }
   }
-  
+
   private markModified(): void {
     this.modified = true;
   }
-  
+
   private async ensureInitialized(): Promise<void> {
     if (!this.initialized && !this.initPromise) {
       await this.initialize();
@@ -74,8 +74,8 @@ export class Queue extends EventEmitter {
   }
 
   get duration(): number {
-    return this.tracks.reduce((acc, track) => acc + track.duration, 0) + 
-           (this.current?.duration || 0);
+    return this.tracks.reduce((acc, track) => acc + track.duration, 0) +
+      (this.current?.duration || 0);
   }
 
   async add(track: Track | Track[], isAutoPlay: boolean = false): Promise<void> {
@@ -83,7 +83,7 @@ export class Queue extends EventEmitter {
     this.markModified();
     const tracksToAdd = Array.isArray(track) ? track : [track];
     this.tracks.push(...tracksToAdd);
-    
+
     if (!isAutoPlay && this.player) {
       if (typeof this.player.setAutoPlaySession === 'function') {
         this.player.setAutoPlaySession(false);
@@ -92,7 +92,7 @@ export class Queue extends EventEmitter {
         this.player.setAutoPlay(false);
       }
     }
-    
+
     await this.save();
     this.emit('add', tracksToAdd);
   }
@@ -100,7 +100,7 @@ export class Queue extends EventEmitter {
   async remove(index: number): Promise<Track | null> {
     await this.ensureInitialized();
     if (index < 0 || index >= this.tracks.length) return null;
-    
+
     this.markModified();
     const removed = this.tracks.splice(index, 1)[0];
     await this.save();
@@ -113,6 +113,7 @@ export class Queue extends EventEmitter {
     this.markModified();
     const oldTracks = [...this.tracks];
     this.tracks = [];
+    this.current = null;  // Also clear current track to prevent persistence issues
     await this.save();
     this.emit('clear', oldTracks);
   }
@@ -155,7 +156,7 @@ export class Queue extends EventEmitter {
   async skipTo(index: number): Promise<Track | null> {
     await this.ensureInitialized();
     if (index < 0 || index >= this.tracks.length) return null;
-    
+
     this.markModified();
     const track = this.tracks[index];
     this.tracks.splice(0, index + 1);
