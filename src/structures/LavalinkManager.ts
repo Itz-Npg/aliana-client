@@ -373,7 +373,9 @@ export class LavalinkManager extends EventEmitter {
     let tracks: Track[] = [];
     let playlistInfo: PlaylistInfo | undefined;
 
-    if (result.loadType === 'search' || result.loadType === 'track') {
+    if (result.loadType === 'track') {
+      tracks = result.data ? [result.data] : [];
+    } else if (result.loadType === 'search') {
       tracks = Array.isArray(result.data) ? result.data : [];
     } else if (result.loadType === 'playlist') {
       if (result.data && typeof result.data === 'object' && 'tracks' in result.data) {

@@ -873,7 +873,7 @@ function formatTime(ms: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-const token = process.env.DISCORD_BOT_TOKEN;
+const token = 'MTI2MTc0OTQ4MTk3Njg4OTM5Nw.G0xK0p.KFnLFz9LPp-rUnrFHckzApEWSyMS_wiqGDw_Xk';
 
 if (!token) {
   console.error('❌ DISCORD_BOT_TOKEN environment variable is not set!');
